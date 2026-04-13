@@ -44,7 +44,7 @@ export default function Register() {
         localStorage.setItem("token", result.token);
       }
 
-      router.push("/hotels");
+      router.push("/register-success");
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred during registration");
     } finally {
