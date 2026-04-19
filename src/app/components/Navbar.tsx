@@ -1,4 +1,7 @@
-import { Link, useNavigate } from "react-router";
+"use client";
+
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "./ui/button";
 import { Hotel, LogOut } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -10,7 +13,7 @@ interface User {
 }
 
 export default function Navbar() {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
@@ -18,7 +21,6 @@ export default function Navbar() {
     const token = localStorage.getItem("token");
     if (token) {
       setIsAuthenticated(true);
-      // Decode JWT to get user info (simplified - in production use a proper JWT library)
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
         setUser(payload);
@@ -32,14 +34,14 @@ export default function Navbar() {
     localStorage.removeItem("token");
     setIsAuthenticated(false);
     setUser(null);
-    navigate("/login");
+    router.push("/login");
   };
 
   return (
     <nav className="bg-white shadow-sm border-b sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <Link to="/hotels" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+          <Link href="/hotels" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
             <div className="bg-blue-600 p-2 rounded-lg">
               <Hotel className="size-6 text-white" />
             </div>
@@ -49,14 +51,14 @@ export default function Navbar() {
           <div className="flex items-center gap-4">
             {isAuthenticated ? (
               <>
-                <Button variant="ghost" onClick={() => navigate("/hotels")}>
+                <Button variant="ghost" onClick={() => router.push("/hotels")}>
                   Hotels
                 </Button>
-                <Button variant="ghost" onClick={() => navigate("/bookings")}>
+                <Button variant="ghost" onClick={() => router.push("/bookings")}>
                   My Bookings
                 </Button>
                 {user?.role === "admin" && (
-                  <Button variant="ghost" onClick={() => navigate("/admin")}>
+                  <Button variant="ghost" onClick={() => router.push("/admin")}>
                     Admin Dashboard
                   </Button>
                 )}
@@ -67,10 +69,10 @@ export default function Navbar() {
               </>
             ) : (
               <>
-                <Button variant="ghost" onClick={() => navigate("/login")}>
+                <Button variant="ghost" onClick={() => router.push("/login")}>
                   Login
                 </Button>
-                <Button onClick={() => navigate("/register")}>
+                <Button onClick={() => router.push("/register")}>
                   Register
                 </Button>
               </>

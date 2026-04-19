@@ -3,11 +3,11 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
-import { Button } from "@/src/app/components/ui/button";
-import { Input } from "@/src/app/components/ui/input";
-import { Label } from "@/src/app/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/src/app/components/ui/card";
-import { Alert, AlertDescription } from "@/src/app/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, User, Trash2 } from "lucide-react";
 import {
   AlertDialog,
@@ -19,7 +19,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/src/app/components/ui/alert-dialog";
+} from "@/components/ui/alert-dialog";
 import { apiRequest } from "@/lib/api";
 
 interface ProfileFormData {

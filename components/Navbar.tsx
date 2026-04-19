@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { Button } from "@/src/app/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Hotel, LogOut, User, Menu, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import {
@@ -12,9 +12,9 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/src/app/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/src/app/components/ui/avatar";
-import { Sheet, SheetContent, SheetTrigger } from "@/src/app/components/ui/sheet";
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 interface UserData {
   id: string;

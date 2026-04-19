@@ -4,11 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
-import { Button } from "@/src/app/components/ui/button";
-import { Input } from "@/src/app/components/ui/input";
-import { Label } from "@/src/app/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/src/app/components/ui/card";
-import { Alert, AlertDescription } from "@/src/app/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Hotel } from "lucide-react";
 import { apiRequest } from "@/lib/api";
 
@@ -113,7 +113,7 @@ export default function Login() {
               {isLoading ? "Signing in..." : "Sign in"}
             </Button>
             <p className="text-sm text-center text-gray-600">
-              Don't have an account?{" "}
+              Don&apos;t have an account?{" "}
               <Link href="/register" className="text-blue-600 hover:underline font-medium">
                 Create account
               </Link>
