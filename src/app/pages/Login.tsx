@@ -18,17 +18,20 @@ export default function Login() {
   const [error, setError] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
 
+  // ใช้ react-hook-form สำหรับจัดการ form
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<LoginFormData>();
 
+  // function ที่จะถูกเรียกเมื่อ submit form
   const onSubmit = async (data: LoginFormData) => {
     setError("");
     setIsLoading(true);
 
     try {
+      // ยิง request ไปที่ backend เพื่อ login
       const response = await fetch("/auth/login", {
         method: "POST",
         headers: {
