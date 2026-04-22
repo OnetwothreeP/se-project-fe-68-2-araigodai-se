@@ -25,6 +25,7 @@ export default function Hotels() {
   const [limit, setLimit] = useState(6);
   const [totalPages, setTotalPages] = useState(1);
   const [sortBy, setSortBy] = useState<string>("name");
+  const [imgErrors, setImgErrors] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     fetchHotels();
@@ -147,7 +148,21 @@ export default function Hotels() {
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {hotels.map((hotel) => (
-                <Card key={hotel._id} className="hover:shadow-lg transition-shadow">
+                <Card key={hotel._id} className="hover:shadow-lg transition-shadow overflow-hidden">
+                  <div className="relative w-full h-48 bg-gray-100">
+                    {!imgErrors[hotel._id] ? (
+                      <img
+                        src={`/hotels/${hotel._id}.jpg`}
+                        alt={hotel.name}
+                        className="w-full h-full object-cover"
+                        onError={() => setImgErrors((prev) => ({ ...prev, [hotel._id]: true }))}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-blue-50">
+                        <Hotel className="size-16 text-blue-300" />
+                      </div>
+                    )}
+                  </div>
                   <CardHeader>
                     <CardTitle className="flex items-start gap-2">
                       <Hotel className="size-5 text-blue-600 mt-1 flex-shrink-0" />
