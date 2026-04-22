@@ -101,9 +101,14 @@ export default function Navbar() {
                   Hotels
                 </Button>
                 {user?.role === "admin" ? (
-                  <Button variant="ghost" onClick={() => router.push("/admin")}>
-                    Admin Dashboard
-                  </Button>
+                  <>
+                    <Button variant="ghost" onClick={() => router.push("/admin")}>
+                      Admin Dashboard
+                    </Button>
+                    <Button variant="ghost" onClick={() => router.push("/admin/roles")}>
+                      Manage Roles
+                    </Button>
+                  </>
                 ) : (
                   <Button variant="ghost" onClick={() => router.push("/bookings")}>
                     My Bookings
@@ -125,7 +130,7 @@ export default function Navbar() {
                       <div className="flex flex-col space-y-1">
                         <p className="text-sm font-medium leading-none">{user?.name || "User"}</p>
                         <p className="text-xs leading-none text-gray-500">
-                          {user?.role === "admin" ? "Administrator" : "User"}
+                          {user?.role === "admin" ? "Administrator" : user?.role === "hotel_owner" ? "Hotel Owner" : "User"}
                         </p>
                       </div>
                     </DropdownMenuLabel>
@@ -172,7 +177,7 @@ export default function Navbar() {
                       <div className="flex flex-col space-y-1">
                         <p className="text-sm font-medium leading-none">{user?.name || "User"}</p>
                         <p className="text-xs leading-none text-gray-500">
-                          {user?.role === "admin" ? "Administrator" : "User"}
+                          {user?.role === "admin" ? "Administrator" : user?.role === "hotel_owner" ? "Hotel Owner" : "User"}
                         </p>
                       </div>
                     </DropdownMenuLabel>
@@ -218,16 +223,28 @@ export default function Navbar() {
                         My Bookings
                       </Button>
                       {user?.role === "admin" && (
-                        <Button
-                          variant="ghost"
-                          className="justify-start"
-                          onClick={() => {
-                            router.push("/admin");
-                            setMobileMenuOpen(false);
-                          }}
-                        >
-                          Admin Dashboard
-                        </Button>
+                        <>
+                          <Button
+                            variant="ghost"
+                            className="justify-start"
+                            onClick={() => {
+                              router.push("/admin");
+                              setMobileMenuOpen(false);
+                            }}
+                          >
+                            Admin Dashboard
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            className="justify-start"
+                            onClick={() => {
+                              router.push("/admin/roles");
+                              setMobileMenuOpen(false);
+                            }}
+                          >
+                            Manage Roles
+                          </Button>
+                        </>
                       )}
                     </div>
                   </SheetContent>
