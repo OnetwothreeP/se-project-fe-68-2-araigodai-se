@@ -4,14 +4,16 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Separator } from "@/components/ui/separator";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
+import { CalendarIcon, Hotel, LogIn, LogOut, Moon } from "lucide-react";
+import { format, addDays } from "date-fns";
 import { apiRequest } from "@/lib/api";
 
 interface BookingFormData {
@@ -24,15 +26,19 @@ interface Booking {
   hotel: {
     _id: string;
     name: string;
+    address?: string;
+    telephone?: string;
   };
   checkInDate: string;
   numberOfNights: number;
+  createdAt?: string;
 }
 
 export default function EditBooking() {
   const router = useRouter();
   const params = useParams();
   const bookingId = params.id as string;
+
   const [error, setError] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
@@ -40,10 +46,7 @@ export default function EditBooking() {
   const [checkInDate, setCheckInDate] = useState<Date>();
   const [numberOfNights, setNumberOfNights] = useState<string>("1");
 
-  const {
-    handleSubmit,
-    setValue,
-  } = useForm<BookingFormData>();
+  const { handleSubmit, setValue } = useForm<BookingFormData>();
 
   useEffect(() => {
     fetchBooking();
@@ -53,29 +56,27 @@ export default function EditBooking() {
     setIsFetching(true);
     try {
       const data = await apiRequest(`/bookings/${bookingId}`);
-      setBooking(data.data);
-      
-      const date = new Date(data.data.checkInDate);
+      const b: Booking = data.data;
+      setBooking(b);
+      const date = new Date(b.checkInDate);
       setCheckInDate(date);
-      setNumberOfNights(data.data.numberOfNights.toString());
+      setNumberOfNights(b.numberOfNights.toString());
       setValue("checkInDate", date);
-      setValue("numberOfNights", data.data.numberOfNights);
-    } catch (err) {
+      setValue("numberOfNights", b.numberOfNights);
+    } catch {
       setError("Failed to load booking");
     } finally {
       setIsFetching(false);
     }
   };
 
-  const onSubmit = async (data: BookingFormData) => {
+  const onSubmit = async () => {
     if (!checkInDate) {
       setError("Please select a check-in date");
       return;
     }
-
     setError("");
     setIsLoading(true);
-
     try {
       await apiRequest(`/bookings/${bookingId}`, {
         method: "PUT",
@@ -84,7 +85,6 @@ export default function EditBooking() {
           numberOfNights: Number(numberOfNights),
         }),
       });
-
       router.push("/bookings");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update booking");
@@ -93,16 +93,18 @@ export default function EditBooking() {
     }
   };
 
+  const checkOutDate = checkInDate ? addDays(checkInDate, Number(numberOfNights)) : null;
+
   if (isFetching) {
     return (
       <div className="min-h-screen w-full bg-gradient-to-br from-blue-50 to-indigo-100">
-        <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <main className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <Card>
             <CardContent className="py-12">
               <div className="animate-pulse space-y-4">
-                <div className="h-8 bg-gray-200 rounded w-1/3"></div>
-                <div className="h-12 bg-gray-200 rounded"></div>
-                <div className="h-12 bg-gray-200 rounded"></div>
+                <div className="h-8 bg-gray-200 rounded w-1/3" />
+                <div className="h-12 bg-gray-200 rounded" />
+                <div className="h-12 bg-gray-200 rounded" />
               </div>
             </CardContent>
           </Card>
@@ -113,14 +115,24 @@ export default function EditBooking() {
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-blue-50 to-indigo-100">
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Card>
           <CardHeader>
-            <CardTitle>Edit Booking</CardTitle>
-            <CardDescription>
-              Update your check-in date and number of nights (maximum 3 nights)
-            </CardDescription>
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <CardTitle>Edit Booking</CardTitle>
+                <CardDescription>
+                  Update your check-in date and number of nights (maximum 3 nights)
+                </CardDescription>
+              </div>
+              {booking && (
+                <Badge variant="outline" className="font-mono text-xs shrink-0">
+                  #{booking._id.slice(-6).toUpperCase()}
+                </Badge>
+              )}
+            </div>
           </CardHeader>
+
           <form onSubmit={handleSubmit(onSubmit)}>
             <CardContent className="space-y-6 mb-4">
               {error && (
@@ -129,19 +141,29 @@ export default function EditBooking() {
                 </Alert>
               )}
 
+              {/* Booking Info Summary */}
               {booking && (
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                  <p className="text-sm text-gray-600">
-                    Booking ID: <span className="font-mono font-medium">{booking._id}</span>
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    Hotel: <span className="font-medium">{booking.hotel.name}</span>
-                  </p>
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-2">
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <Hotel className="size-4 text-blue-600" />
+                    {booking.hotel.name}
+                  </div>
+                  {booking.hotel.address && (
+                    <p className="text-xs text-gray-500 pl-6">{booking.hotel.address}</p>
+                  )}
+                  {booking.createdAt && (
+                    <p className="text-xs text-gray-400 pl-6">
+                      จองเมื่อ {format(new Date(booking.createdAt), "d MMM yyyy, HH:mm")}
+                    </p>
+                  )}
                 </div>
               )}
 
+              <Separator />
+
+              {/* Check-in Date */}
               <div className="space-y-2">
-                <Label htmlFor="checkInDate">Check-in Date</Label>
+                <Label>วันเช็คอิน</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
@@ -149,7 +171,7 @@ export default function EditBooking() {
                       className="w-full justify-start text-left font-normal"
                     >
                       <CalendarIcon className="mr-2 size-4" />
-                      {checkInDate ? format(checkInDate, "PPP") : "Pick a date"}
+                      {checkInDate ? format(checkInDate, "PPP") : "เลือกวันที่"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
@@ -167,8 +189,9 @@ export default function EditBooking() {
                 </Popover>
               </div>
 
+              {/* Number of Nights */}
               <div className="space-y-2">
-                <Label htmlFor="numberOfNights">Number of Nights</Label>
+                <Label>จำนวนคืน</Label>
                 <Select
                   value={numberOfNights}
                   onValueChange={(value) => {
@@ -177,42 +200,49 @@ export default function EditBooking() {
                   }}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select number of nights" />
+                    <SelectValue placeholder="เลือกจำนวนคืน" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="1">1 Night</SelectItem>
-                    <SelectItem value="2">2 Nights</SelectItem>
-                    <SelectItem value="3">3 Nights</SelectItem>
+                    <SelectItem value="1">1 คืน</SelectItem>
+                    <SelectItem value="2">2 คืน</SelectItem>
+                    <SelectItem value="3">3 คืน</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-sm text-gray-500">Maximum stay is 3 nights</p>
+                <p className="text-sm text-gray-500">จำนวนคืนสูงสุด 3 คืน</p>
               </div>
 
-              {checkInDate && numberOfNights && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                  <h4 className="font-semibold mb-2">Updated Booking Summary</h4>
-                  <div className="space-y-1 text-sm">
-                    <p>
-                      <span className="text-gray-600">Check-in:</span>{" "}
-                      <span className="font-medium">{format(checkInDate, "PPP")}</span>
-                    </p>
-                    <p>
-                      <span className="text-gray-600">Nights:</span>{" "}
-                      <span className="font-medium">{numberOfNights}</span>
-                    </p>
-                    <p>
-                      <span className="text-gray-600">Check-out:</span>{" "}
-                      <span className="font-medium">
-                        {format(
-                          new Date(checkInDate.getTime() + Number(numberOfNights) * 24 * 60 * 60 * 1000),
-                          "PPP"
-                        )}
-                      </span>
-                    </p>
+              {/* Updated Booking Summary */}
+              {checkInDate && checkOutDate && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-2">
+                  <h4 className="font-semibold text-sm">สรุปการจองที่อัปเดต</h4>
+                  <Separator />
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <LogIn className="size-3.5 text-green-600" />
+                        <span>เช็คอิน</span>
+                      </div>
+                      <span className="font-medium">{format(checkInDate, "d MMM yyyy")}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <LogOut className="size-3.5 text-red-500" />
+                        <span>เช็คเอาต์</span>
+                      </div>
+                      <span className="font-medium">{format(checkOutDate, "d MMM yyyy")}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <Moon className="size-3.5 text-indigo-500" />
+                        <span>จำนวนคืน</span>
+                      </div>
+                      <span className="font-medium">{numberOfNights} คืน</span>
+                    </div>
                   </div>
                 </div>
               )}
             </CardContent>
+
             <div className="px-6 pb-6 flex gap-4">
               <Button
                 type="button"
@@ -220,10 +250,14 @@ export default function EditBooking() {
                 className="flex-1"
                 onClick={() => router.push("/bookings")}
               >
-                Cancel
+                ยกเลิก
               </Button>
-              <Button type="submit" className="flex-1" disabled={isLoading || !checkInDate}>
-                {isLoading ? "Updating..." : "Update Booking"}
+              <Button
+                type="submit"
+                className="flex-1"
+                disabled={isLoading || !checkInDate}
+              >
+                {isLoading ? "กำลังบันทึก..." : "บันทึกการเปลี่ยนแปลง"}
               </Button>
             </div>
           </form>

@@ -1,16 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CalendarIcon, Hotel, MapPin, Phone } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { CalendarIcon, Check, Hotel, MapPin, Phone } from "lucide-react";
 import { format } from "date-fns";
 import { apiRequest } from "@/lib/api";
 
@@ -26,20 +28,77 @@ interface HotelData {
   telephone: string;
 }
 
+interface RoomType {
+  id: string;
+  name: string;
+  pricePerNight: number;
+  imageUrl: string;
+  amenities: string[];
+}
+
+// Static room types — replace with API data when backend supports it
+const ROOM_TYPES: RoomType[] = [
+  {
+    id: "standard",
+    name: "Standard Room",
+    pricePerNight: 1200,
+    imageUrl: "https://picsum.photos/seed/room-standard/600/400",
+    amenities: [
+      "เตียงเดี่ยว 1 หลัง",
+      "ห้องน้ำในตัว",
+      "TV 32 นิ้ว",
+      "Wi-Fi ฟรี",
+      "เครื่องปรับอากาศ",
+    ],
+  },
+  {
+    id: "deluxe",
+    name: "Deluxe Room",
+    pricePerNight: 2500,
+    imageUrl: "https://picsum.photos/seed/room-deluxe/600/400",
+    amenities: [
+      "เตียงคู่ Queen Size",
+      "ห้องน้ำในตัว",
+      "TV 43 นิ้ว",
+      "Wi-Fi ฟรี",
+      "เครื่องปรับอากาศ",
+      "วิวเมือง",
+      "ตู้เย็น & Minibar",
+    ],
+  },
+  {
+    id: "suite",
+    name: "Suite Room",
+    pricePerNight: 5000,
+    imageUrl: "https://picsum.photos/seed/room-suite/600/400",
+    amenities: [
+      "เตียง King Size",
+      "ห้องน้ำในตัว + อ่างอาบน้ำ",
+      "TV 55 นิ้ว",
+      "Wi-Fi ฟรี",
+      "เครื่องปรับอากาศ",
+      "วิวพาโนรามา",
+      "ห้องนั่งเล่นแยก",
+      "ตู้เย็น & Minibar",
+      "อาหารเช้าฟรี 2 ท่าน",
+    ],
+  },
+];
+
 export default function BookHotel() {
   const router = useRouter();
   const params = useParams();
   const hotelId = params.hotelId as string;
+
   const [error, setError] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [hotel, setHotel] = useState<HotelData | null>(null);
   const [checkInDate, setCheckInDate] = useState<Date>();
   const [numberOfNights, setNumberOfNights] = useState<string>("1");
+  const [selectedRoom, setSelectedRoom] = useState<RoomType | null>(null);
+  const bookingFormRef = useRef<HTMLDivElement>(null);
 
-  const {
-    handleSubmit,
-    setValue,
-  } = useForm<BookingFormData>();
+  const { handleSubmit, setValue } = useForm<BookingFormData>();
 
   useEffect(() => {
     fetchHotelDetails();
@@ -49,14 +108,25 @@ export default function BookHotel() {
     try {
       const data = await apiRequest(`/hotels/${hotelId}`);
       setHotel(data.data);
-    } catch (err) {
+    } catch {
       setError("Failed to load hotel details");
     }
   };
 
-  const onSubmit = async (data: BookingFormData) => {
+  const handleSelectRoom = (room: RoomType) => {
+    setSelectedRoom(room);
+    setTimeout(() => {
+      bookingFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100);
+  };
+
+  const onSubmit = async () => {
     if (!checkInDate) {
-      setError("Please select a check-in date");
+      setError("กรุณาเลือกวันเช็คอิน");
+      return;
+    }
+    if (!selectedRoom) {
+      setError("กรุณาเลือกประเภทห้อง");
       return;
     }
 
@@ -69,6 +139,7 @@ export default function BookHotel() {
         body: JSON.stringify({
           checkInDate: format(checkInDate, "yyyy-MM-dd"),
           numberOfNights: Number(numberOfNights),
+          roomType: selectedRoom.id,
         }),
       });
 
@@ -80,6 +151,10 @@ export default function BookHotel() {
     }
   };
 
+  const totalPrice = selectedRoom
+    ? selectedRoom.pricePerNight * Number(numberOfNights)
+    : 0;
+
   if (!hotel) {
     return (
       <div className="min-h-screen w-full bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
@@ -90,8 +165,10 @@ export default function BookHotel() {
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-blue-50 to-indigo-100">
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Card className="mb-6">
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+        {/* Hotel Info */}
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Hotel className="size-6 text-blue-600" />
@@ -110,109 +187,214 @@ export default function BookHotel() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Book Your Stay</CardTitle>
-            <CardDescription>
-              Select your check-in date and number of nights (maximum 3 nights)
-            </CardDescription>
-          </CardHeader>
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <CardContent className="space-y-6 mb-4">
-              {error && (
-                <Alert variant="destructive">
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-
-              <div className="space-y-2">
-                <Label htmlFor="checkInDate">Check-in Date</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start text-left font-normal"
-                    >
-                      <CalendarIcon className="mr-2 size-4" />
-                      {checkInDate ? format(checkInDate, "PPP") : "Pick a date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={checkInDate}
-                      onSelect={(date) => {
-                        setCheckInDate(date);
-                        if (date) setValue("checkInDate", date);
-                      }}
-                      disabled={(date) => date < new Date()}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="numberOfNights">Number of Nights</Label>
-                <Select
-                  value={numberOfNights}
-                  onValueChange={(value) => {
-                    setNumberOfNights(value);
-                    setValue("numberOfNights", Number(value));
-                  }}
+        {/* Room Type Selection */}
+        <div>
+          <h2 className="text-xl font-semibold mb-4">เลือกประเภทห้อง</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {ROOM_TYPES.map((room) => {
+              const isSelected = selectedRoom?.id === room.id;
+              return (
+                <Card
+                  key={room.id}
+                  onClick={() => handleSelectRoom(room)}
+                  className={`cursor-pointer transition-all duration-200 overflow-hidden hover:shadow-lg flex flex-col ${
+                    isSelected
+                      ? "ring-2 ring-blue-500 shadow-lg"
+                      : "hover:ring-1 hover:ring-blue-300"
+                  }`}
                 >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select number of nights" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">1 Night</SelectItem>
-                    <SelectItem value="2">2 Nights</SelectItem>
-                    <SelectItem value="3">3 Nights</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-sm text-gray-500">Maximum stay is 3 nights</p>
-              </div>
-
-              {checkInDate && numberOfNights && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <h4 className="font-semibold mb-2">Booking Summary</h4>
-                  <div className="space-y-1 text-sm">
-                    <p>
-                      <span className="text-gray-600">Check-in:</span>{" "}
-                      <span className="font-medium">{format(checkInDate, "PPP")}</span>
-                    </p>
-                    <p>
-                      <span className="text-gray-600">Nights:</span>{" "}
-                      <span className="font-medium">{numberOfNights}</span>
-                    </p>
-                    <p>
-                      <span className="text-gray-600">Check-out:</span>{" "}
-                      <span className="font-medium">
-                        {format(
-                          new Date(checkInDate.getTime() + Number(numberOfNights) * 24 * 60 * 60 * 1000),
-                          "PPP"
-                        )}
-                      </span>
-                    </p>
+                  {/* Room Image */}
+                  <div className="relative h-44 overflow-hidden bg-gray-100">
+                    <img
+                      src={room.imageUrl}
+                      alt={room.name}
+                      className="w-full h-full object-cover"
+                    />
+                    {isSelected && (
+                      <div className="absolute top-2 right-2 bg-blue-500 text-white rounded-full p-1">
+                        <Check className="size-4" />
+                      </div>
+                    )}
                   </div>
+
+                  <CardContent className="p-4 flex flex-col flex-1">
+                    {/* Name & Price */}
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="font-semibold text-base leading-tight">{room.name}</h3>
+                      <Badge
+                        variant="secondary"
+                        className="text-blue-700 bg-blue-100 whitespace-nowrap shrink-0"
+                      >
+                        ฿{room.pricePerNight.toLocaleString()}/คืน
+                      </Badge>
+                    </div>
+
+                    <Separator className="my-3" />
+
+                    {/* Amenities Checklist */}
+                    <ul className="space-y-1.5 flex-1">
+                      {room.amenities.map((item) => (
+                        <li key={item} className="flex items-center gap-2 text-sm text-gray-700">
+                          <Check className="size-3.5 text-green-500 shrink-0" />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="w-full mt-4"
+                      variant={isSelected ? "default" : "outline"}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSelectRoom(room);
+                      }}
+                    >
+                      {isSelected ? "เลือกแล้ว" : "เลือกห้องนี้"}
+                    </Button>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Booking Form — shown after room selected */}
+        {selectedRoom && (
+          <div ref={bookingFormRef}>
+            <Card>
+              <CardHeader>
+                <CardTitle>รายละเอียดการจอง</CardTitle>
+                <CardDescription>
+                  ห้องที่เลือก:{" "}
+                  <span className="font-medium text-blue-700">{selectedRoom.name}</span>
+                </CardDescription>
+              </CardHeader>
+              <form onSubmit={handleSubmit(onSubmit)}>
+                <CardContent className="space-y-6 mb-4">
+                  {error && (
+                    <Alert variant="destructive">
+                      <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                  )}
+
+                  {/* Check-in Date */}
+                  <div className="space-y-2">
+                    <Label>วันเช็คอิน</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="w-full justify-start text-left font-normal"
+                        >
+                          <CalendarIcon className="mr-2 size-4" />
+                          {checkInDate ? format(checkInDate, "PPP") : "เลือกวันที่"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={checkInDate}
+                          onSelect={(date) => {
+                            setCheckInDate(date);
+                            if (date) setValue("checkInDate", date);
+                          }}
+                          disabled={(date) => date < new Date()}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+
+                  {/* Number of Nights */}
+                  <div className="space-y-2">
+                    <Label>จำนวนคืน</Label>
+                    <Select
+                      value={numberOfNights}
+                      onValueChange={(value) => {
+                        setNumberOfNights(value);
+                        setValue("numberOfNights", Number(value));
+                      }}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="เลือกจำนวนคืน" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">1 คืน</SelectItem>
+                        <SelectItem value="2">2 คืน</SelectItem>
+                        <SelectItem value="3">3 คืน</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-sm text-gray-500">จำนวนคืนสูงสุด 3 คืน</p>
+                  </div>
+
+                  {/* Booking Summary */}
+                  {checkInDate && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-2">
+                      <h4 className="font-semibold text-sm">สรุปการจอง</h4>
+                      <Separator />
+                      <div className="space-y-1 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">ประเภทห้อง</span>
+                          <span className="font-medium">{selectedRoom.name}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">เช็คอิน</span>
+                          <span className="font-medium">{format(checkInDate, "PPP")}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">เช็คเอาต์</span>
+                          <span className="font-medium">
+                            {format(
+                              new Date(
+                                checkInDate.getTime() + Number(numberOfNights) * 86400000
+                              ),
+                              "PPP"
+                            )}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">จำนวนคืน</span>
+                          <span className="font-medium">{numberOfNights} คืน</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">ราคาต่อคืน</span>
+                          <span className="font-medium">
+                            ฿{selectedRoom.pricePerNight.toLocaleString()}
+                          </span>
+                        </div>
+                        <Separator />
+                        <div className="flex justify-between text-base font-bold">
+                          <span>ราคารวม</span>
+                          <span className="text-blue-700">฿{totalPrice.toLocaleString()}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+
+                <div className="px-6 pb-6 flex gap-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => router.push("/hotels")}
+                  >
+                    ยกเลิก
+                  </Button>
+                  <Button
+                    type="submit"
+                    className="flex-1"
+                    disabled={isLoading || !checkInDate}
+                  >
+                    {isLoading ? "กำลังจอง..." : "ยืนยันการจอง"}
+                  </Button>
                 </div>
-              )}
-            </CardContent>
-            <div className="px-6 pb-6 flex gap-4">
-              <Button
-                type="button"
-                variant="outline"
-                className="flex-1"
-                onClick={() => router.push("/hotels")}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" className="flex-1" disabled={isLoading || !checkInDate}>
-                {isLoading ? "Booking..." : "Confirm Booking"}
-              </Button>
-            </div>
-          </form>
-        </Card>
+              </form>
+            </Card>
+          </div>
+        )}
       </main>
     </div>
   );

@@ -3,11 +3,13 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Calendar, Edit, Hotel, Moon, Trash2 } from "lucide-react";
-import { format } from "date-fns";
+import { Separator } from "@/components/ui/separator";
+import { CalendarDays, Edit, Hotel, LogIn, LogOut, Moon, Trash2 } from "lucide-react";
+import { format, addDays } from "date-fns";
 import { apiRequest } from "@/lib/api";
 
 interface Booking {
@@ -15,9 +17,20 @@ interface Booking {
   hotel: {
     _id: string;
     name: string;
+    address?: string;
+    telephone?: string;
   };
   checkInDate: string;
   numberOfNights: number;
+  createdAt?: string;
+}
+
+function getCheckOutDate(checkInDate: string, numberOfNights: number): Date {
+  return addDays(new Date(checkInDate), numberOfNights);
+}
+
+function shortId(id: string): string {
+  return `#${id.slice(-6).toUpperCase()}`;
 }
 
 export default function MyBookings() {
@@ -33,7 +46,6 @@ export default function MyBookings() {
   const fetchBookings = async () => {
     setIsLoading(true);
     setError("");
-
     try {
       const data = await apiRequest("/bookings");
       setBookings(data.data || []);
@@ -47,14 +59,10 @@ export default function MyBookings() {
   const handleDelete = async (bookingId: string) => {
     try {
       await apiRequest(`/bookings/${bookingId}`, { method: "DELETE" });
-      setBookings(bookings.filter((booking) => booking._id !== bookingId));
+      setBookings(bookings.filter((b) => b._id !== bookingId));
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed to delete booking");
     }
-  };
-
-  const handleEdit = (bookingId: string) => {
-    router.push(`/bookings/${bookingId}/edit`);
   };
 
   return (
@@ -76,7 +84,7 @@ export default function MyBookings() {
             <CardContent className="py-8">
               <div className="animate-pulse space-y-4">
                 {[...Array(3)].map((_, i) => (
-                  <div key={i} className="h-16 bg-gray-200 rounded"></div>
+                  <div key={i} className="h-16 bg-gray-200 rounded" />
                 ))}
               </div>
             </CardContent>
@@ -92,129 +100,185 @@ export default function MyBookings() {
           </Card>
         ) : (
           <>
-            {/* Desktop Table View */}
+            {/* Desktop Table */}
             <Card className="hidden md:block">
               <CardHeader>
-                <CardTitle>Your Reservations</CardTitle>
+                <CardTitle>Your Reservations ({bookings.length})</CardTitle>
               </CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Hotel ID</TableHead>
+                      <TableHead className="w-24">Booking ID</TableHead>
                       <TableHead>Hotel Name</TableHead>
-                      <TableHead>Check-in Date</TableHead>
-                      <TableHead>Nights</TableHead>
+                      <TableHead>Check-in</TableHead>
+                      <TableHead>Check-out</TableHead>
+                      <TableHead className="text-center">Nights</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {bookings.map((booking) => (
-                      <TableRow key={booking._id}>
-                        <TableCell className="font-mono text-sm">{booking.hotel._id}</TableCell>
-                        <TableCell className="font-medium">{booking.hotel.name}</TableCell>
-                        <TableCell>
-                          {format(new Date(booking.checkInDate), "PPP")}
-                        </TableCell>
-                        <TableCell>{booking.numberOfNights}</TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleEdit(booking._id)}
-                            >
-                              <Edit className="size-4 mr-1" />
-                              Edit
-                            </Button>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="outline" size="sm">
-                                  <Trash2 className="size-4 mr-1 text-red-500" />
-                                  Delete
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Delete Booking</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Are you sure you want to cancel this booking? This action cannot be undone.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    onClick={() => handleDelete(booking._id)}
-                                    className="bg-red-600 hover:bg-red-700"
-                                  >
+                    {bookings.map((booking) => {
+                      const checkOut = getCheckOutDate(booking.checkInDate, booking.numberOfNights);
+                      return (
+                        <TableRow key={booking._id}>
+                          <TableCell>
+                            <Badge variant="outline" className="font-mono text-xs">
+                              {shortId(booking._id)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="font-medium">{booking.hotel.name}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1.5 text-sm">
+                              <LogIn className="size-3.5 text-green-600" />
+                              {format(new Date(booking.checkInDate), "d MMM yyyy")}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1.5 text-sm">
+                              <LogOut className="size-3.5 text-red-500" />
+                              {format(checkOut, "d MMM yyyy")}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <div className="flex items-center justify-center gap-1 text-sm">
+                              <Moon className="size-3.5 text-indigo-500" />
+                              {booking.numberOfNights}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => router.push(`/bookings/${booking._id}/edit`)}
+                              >
+                                <Edit className="size-4 mr-1" />
+                                Edit
+                              </Button>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="outline" size="sm">
+                                    <Trash2 className="size-4 mr-1 text-red-500" />
                                     Delete
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>ยืนยันการยกเลิกการจอง</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      ต้องการยกเลิกการจองที่ <span className="font-semibold">{booking.hotel.name}</span>{" "}
+                                      (เช็คอิน {format(new Date(booking.checkInDate), "d MMM yyyy")}) ใช่หรือไม่?
+                                      การกระทำนี้ไม่สามารถย้อนกลับได้
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => handleDelete(booking._id)}
+                                      className="bg-red-600 hover:bg-red-700"
+                                    >
+                                      ยืนยันลบ
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </CardContent>
             </Card>
 
-            {/* Mobile Card View */}
+            {/* Mobile Cards */}
             <div className="md:hidden space-y-4">
-              {bookings.map((booking) => (
-                <Card key={booking._id}>
-                  <CardHeader>
-                    <CardTitle className="text-lg">{booking.hotel.name}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="flex items-center gap-2 text-sm">
-                      <Calendar className="size-4 text-gray-500" />
-                      <span>{format(new Date(booking.checkInDate), "PPP")}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Moon className="size-4 text-gray-500" />
-                      <span>{booking.numberOfNights} night{booking.numberOfNights > 1 ? "s" : ""}</span>
-                    </div>
-                    <div className="flex gap-2 pt-2">
-                      <Button
-                        variant="outline"
-                        className="flex-1"
-                        onClick={() => handleEdit(booking._id)}
-                      >
-                        <Edit className="size-4 mr-1" />
-                        Edit
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="outline" className="flex-1">
-                            <Trash2 className="size-4 mr-1 text-red-500" />
-                            Delete
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Booking</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Are you sure you want to cancel this booking? This action cannot be undone.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleDelete(booking._id)}
-                              className="bg-red-600 hover:bg-red-700"
-                            >
+              {bookings.map((booking) => {
+                const checkOut = getCheckOutDate(booking.checkInDate, booking.numberOfNights);
+                return (
+                  <Card key={booking._id}>
+                    <CardHeader className="pb-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <CardTitle className="text-base">{booking.hotel.name}</CardTitle>
+                        <Badge variant="outline" className="font-mono text-xs shrink-0">
+                          {shortId(booking._id)}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div className="flex items-center gap-2 text-gray-700">
+                          <LogIn className="size-4 text-green-600 shrink-0" />
+                          <div>
+                            <p className="text-xs text-gray-500">เช็คอิน</p>
+                            <p className="font-medium">{format(new Date(booking.checkInDate), "d MMM yyyy")}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 text-gray-700">
+                          <LogOut className="size-4 text-red-500 shrink-0" />
+                          <div>
+                            <p className="text-xs text-gray-500">เช็คเอาต์</p>
+                            <p className="font-medium">{format(checkOut, "d MMM yyyy")}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 text-sm text-gray-700">
+                        <Moon className="size-4 text-indigo-500 shrink-0" />
+                        <span>{booking.numberOfNights} คืน</span>
+                      </div>
+
+                      {booking.createdAt && (
+                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                          <CalendarDays className="size-3.5 shrink-0" />
+                          <span>จองเมื่อ {format(new Date(booking.createdAt), "d MMM yyyy")}</span>
+                        </div>
+                      )}
+
+                      <Separator />
+
+                      <div className="flex gap-2 pt-1">
+                        <Button
+                          variant="outline"
+                          className="flex-1"
+                          onClick={() => router.push(`/bookings/${booking._id}/edit`)}
+                        >
+                          <Edit className="size-4 mr-1" />
+                          Edit
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="outline" className="flex-1">
+                              <Trash2 className="size-4 mr-1 text-red-500" />
                               Delete
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>ยืนยันการยกเลิกการจอง</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                ต้องการยกเลิกการจองที่ <span className="font-semibold">{booking.hotel.name}</span>{" "}
+                                (เช็คอิน {format(new Date(booking.checkInDate), "d MMM yyyy")}) ใช่หรือไม่?
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDelete(booking._id)}
+                                className="bg-red-600 hover:bg-red-700"
+                              >
+                                ยืนยันลบ
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           </>
         )}
