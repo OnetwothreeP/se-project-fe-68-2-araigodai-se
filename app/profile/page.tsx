@@ -222,7 +222,7 @@ export default function Profile() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="lane" className="font-semibold">Lane (ซอย)</Label>
+                  <Label htmlFor="lane" className="font-semibold">Lane (Soi)</Label>
                   <Input
                     id="lane"
                     type="text"
@@ -231,7 +231,7 @@ export default function Profile() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="road" className="font-semibold">Road (ถนน)</Label>
+                  <Label htmlFor="road" className="font-semibold">Road (Thanon)</Label>
                   <Input
                     id="road"
                     type="text"
@@ -240,7 +240,7 @@ export default function Profile() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="subDistrict" className="font-semibold">Sub-District (แขวง/ตำบล)</Label>
+                  <Label htmlFor="subDistrict" className="font-semibold">Sub-District (Khwaeng/Tambon)</Label>
                   <Input
                     id="subDistrict"
                     type="text"
@@ -249,7 +249,7 @@ export default function Profile() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="district" className="font-semibold">District (เขต/อำเภอ)</Label>
+                  <Label htmlFor="district" className="font-semibold">District (Khet/Amphoe)</Label>
                   <Input
                     id="district"
                     type="text"
@@ -258,7 +258,7 @@ export default function Profile() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="province" className="font-semibold">Province (จังหวัด)</Label>
+                  <Label htmlFor="province" className="font-semibold">Province (Changwat)</Label>
                   <Input
                     id="province"
                     type="text"

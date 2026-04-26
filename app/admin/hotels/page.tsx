@@ -81,9 +81,9 @@ export default function AdminHotels() {
 
   const validate = (): boolean => {
     const errors: FormErrors = {};
-    if (!formData.name.trim()) errors.name = "กรุณากรอกชื่อโรงแรม";
-    if (!formData.address.trim()) errors.address = "กรุณากรอกที่อยู่";
-    if (!formData.telephone.trim()) errors.telephone = "กรุณากรอกเบอร์โทรศัพท์";
+    if (!formData.name.trim()) errors.name = "Hotel name is required";
+    if (!formData.address.trim()) errors.address = "Address is required";
+    if (!formData.telephone.trim()) errors.telephone = "Telephone is required";
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -121,20 +121,18 @@ export default function AdminHotels() {
 
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => router.push("/admin")}
-              className="text-gray-500 hover:text-gray-900 -ml-2"
-            >
-              <ArrowLeft className="size-4 mr-1" />
-              Dashboard
-            </Button>
-          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.push("/admin")}
+            className="text-gray-500 hover:text-gray-900 -ml-2 w-fit"
+          >
+            <ArrowLeft className="size-4 mr-1" />
+            Dashboard
+          </Button>
           <Button onClick={openCreateDialog}>
             <Plus className="size-4 mr-2" />
-            เพิ่มโรงแรม
+            Add Hotel
           </Button>
         </div>
 
@@ -144,16 +142,13 @@ export default function AdminHotels() {
           </div>
           <div>
             <h1 className="text-2xl font-bold">Hotel Management</h1>
-            <p className="text-sm text-gray-500">จัดการข้อมูลโรงแรมทั้งหมดในระบบ</p>
+            <p className="text-sm text-gray-500">Create, update, and delete hotels</p>
           </div>
         </div>
 
-        {/* Stat */}
-        <div className="flex items-center gap-2">
-          <Badge variant="secondary" className="text-sm px-3 py-1">
-            โรงแรมทั้งหมด {hotels.length} แห่ง
-          </Badge>
-        </div>
+        <Badge variant="secondary" className="text-sm px-3 py-1">
+          {hotels.length} {hotels.length === 1 ? "hotel" : "hotels"} total
+        </Badge>
 
         {error && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
@@ -178,15 +173,14 @@ export default function AdminHotels() {
           <Card>
             <CardContent className="py-16 text-center text-gray-400">
               <HotelIcon className="size-12 mx-auto mb-3 opacity-40" />
-              <p className="font-medium">ยังไม่มีโรงแรมในระบบ</p>
-              <p className="text-sm mt-1">กด "เพิ่มโรงแรม" เพื่อเริ่มต้น</p>
+              <p className="font-medium">No hotels yet</p>
+              <p className="text-sm mt-1">Click "Add Hotel" to get started</p>
             </CardContent>
           </Card>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {hotels.map((hotel) => (
               <Card key={hotel._id} className="flex flex-col hover:shadow-md transition-shadow">
-                {/* Card Header */}
                 <CardContent className="pt-5 flex-1 space-y-3">
                   <div className="flex items-start gap-3">
                     <div className="p-2 bg-blue-50 rounded-lg shrink-0">
@@ -199,7 +193,6 @@ export default function AdminHotels() {
                       </Badge>
                     </div>
                   </div>
-
                   <div className="space-y-1.5 text-sm text-gray-600">
                     <div className="flex items-start gap-2">
                       <MapPin className="size-3.5 mt-0.5 shrink-0 text-gray-400" />
@@ -211,14 +204,8 @@ export default function AdminHotels() {
                     </div>
                   </div>
                 </CardContent>
-
                 <CardFooter className="pt-0 pb-4 px-5 flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => openEditDialog(hotel)}
-                  >
+                  <Button variant="outline" size="sm" className="flex-1" onClick={() => openEditDialog(hotel)}>
                     <Edit className="size-3.5 mr-1.5" />
                     Edit
                   </Button>
@@ -231,19 +218,20 @@ export default function AdminHotels() {
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>ยืนยันการลบโรงแรม</AlertDialogTitle>
+                        <AlertDialogTitle>Delete Hotel</AlertDialogTitle>
                         <AlertDialogDescription>
-                          ต้องการลบ <span className="font-semibold">{hotel.name}</span> ออกจากระบบใช่หรือไม่?
-                          การกระทำนี้จะส่งผลต่อการจองทั้งหมดที่เกี่ยวข้องและไม่สามารถย้อนกลับได้
+                          Are you sure you want to delete{" "}
+                          <span className="font-semibold">{hotel.name}</span>? This will affect all
+                          related bookings and cannot be undone.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
-                        <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
                         <AlertDialogAction
                           onClick={() => handleDelete(hotel._id)}
                           className="bg-red-600 hover:bg-red-700"
                         >
-                          ยืนยันลบ
+                          Delete
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
@@ -258,17 +246,14 @@ export default function AdminHotels() {
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>
-                {isCreating ? "เพิ่มโรงแรมใหม่" : "แก้ไขข้อมูลโรงแรม"}
-              </DialogTitle>
+              <DialogTitle>{isCreating ? "Add New Hotel" : "Edit Hotel"}</DialogTitle>
               <DialogDescription>
-                {isCreating ? "กรอกข้อมูลโรงแรมที่ต้องการเพิ่ม" : `แก้ไขข้อมูลของ ${editingHotel?.name}`}
+                {isCreating ? "Fill in the details for the new hotel" : `Update information for ${editingHotel?.name}`}
               </DialogDescription>
             </DialogHeader>
-
             <div className="space-y-4 py-2">
               <div className="space-y-1.5">
-                <Label htmlFor="name">ชื่อโรงแรม</Label>
+                <Label htmlFor="name">Hotel Name</Label>
                 <Input
                   id="name"
                   value={formData.name}
@@ -276,27 +261,21 @@ export default function AdminHotels() {
                   placeholder="Grand Plaza Hotel"
                   className={formErrors.name ? "border-red-400" : ""}
                 />
-                {formErrors.name && (
-                  <p className="text-xs text-red-500">{formErrors.name}</p>
-                )}
+                {formErrors.name && <p className="text-xs text-red-500">{formErrors.name}</p>}
               </div>
-
               <div className="space-y-1.5">
-                <Label htmlFor="address">ที่อยู่</Label>
+                <Label htmlFor="address">Address</Label>
                 <Input
                   id="address"
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  placeholder="123 ถนนสุขุมวิท กรุงเทพฯ"
+                  placeholder="123 Sukhumvit Road, Bangkok"
                   className={formErrors.address ? "border-red-400" : ""}
                 />
-                {formErrors.address && (
-                  <p className="text-xs text-red-500">{formErrors.address}</p>
-                )}
+                {formErrors.address && <p className="text-xs text-red-500">{formErrors.address}</p>}
               </div>
-
               <div className="space-y-1.5">
-                <Label htmlFor="telephone">เบอร์โทรศัพท์</Label>
+                <Label htmlFor="telephone">Telephone</Label>
                 <Input
                   id="telephone"
                   value={formData.telephone}
@@ -304,18 +283,13 @@ export default function AdminHotels() {
                   placeholder="02-xxx-xxxx"
                   className={formErrors.telephone ? "border-red-400" : ""}
                 />
-                {formErrors.telephone && (
-                  <p className="text-xs text-red-500">{formErrors.telephone}</p>
-                )}
+                {formErrors.telephone && <p className="text-xs text-red-500">{formErrors.telephone}</p>}
               </div>
             </div>
-
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                ยกเลิก
-              </Button>
+              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
               <Button onClick={handleSaveHotel} disabled={isSaving}>
-                {isSaving ? "กำลังบันทึก..." : isCreating ? "เพิ่มโรงแรม" : "บันทึกการเปลี่ยนแปลง"}
+                {isSaving ? "Saving..." : isCreating ? "Add Hotel" : "Save Changes"}
               </Button>
             </DialogFooter>
           </DialogContent>

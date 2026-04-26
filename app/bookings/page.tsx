@@ -109,8 +109,8 @@ export default function MyBookings() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-24">Booking ID</TableHead>
-                      <TableHead>Hotel Name</TableHead>
+                      <TableHead className="w-24">Booking</TableHead>
+                      <TableHead>Hotel</TableHead>
                       <TableHead>Check-in</TableHead>
                       <TableHead>Check-out</TableHead>
                       <TableHead className="text-center">Nights</TableHead>
@@ -165,20 +165,21 @@ export default function MyBookings() {
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
                                   <AlertDialogHeader>
-                                    <AlertDialogTitle>ยืนยันการยกเลิกการจอง</AlertDialogTitle>
+                                    <AlertDialogTitle>Cancel Booking</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                      ต้องการยกเลิกการจองที่ <span className="font-semibold">{booking.hotel.name}</span>{" "}
-                                      (เช็คอิน {format(new Date(booking.checkInDate), "d MMM yyyy")}) ใช่หรือไม่?
-                                      การกระทำนี้ไม่สามารถย้อนกลับได้
+                                      Are you sure you want to cancel your booking at{" "}
+                                      <span className="font-semibold">{booking.hotel.name}</span>{" "}
+                                      (check-in {format(new Date(booking.checkInDate), "d MMM yyyy")})?
+                                      This action cannot be undone.
                                     </AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
-                                    <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
                                     <AlertDialogAction
                                       onClick={() => handleDelete(booking._id)}
                                       className="bg-red-600 hover:bg-red-700"
                                     >
-                                      ยืนยันลบ
+                                      Confirm Delete
                                     </AlertDialogAction>
                                   </AlertDialogFooter>
                                 </AlertDialogContent>
@@ -212,33 +213,29 @@ export default function MyBookings() {
                         <div className="flex items-center gap-2 text-gray-700">
                           <LogIn className="size-4 text-green-600 shrink-0" />
                           <div>
-                            <p className="text-xs text-gray-500">เช็คอิน</p>
+                            <p className="text-xs text-gray-500">Check-in</p>
                             <p className="font-medium">{format(new Date(booking.checkInDate), "d MMM yyyy")}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2 text-gray-700">
                           <LogOut className="size-4 text-red-500 shrink-0" />
                           <div>
-                            <p className="text-xs text-gray-500">เช็คเอาต์</p>
+                            <p className="text-xs text-gray-500">Check-out</p>
                             <p className="font-medium">{format(checkOut, "d MMM yyyy")}</p>
                           </div>
                         </div>
                       </div>
-
                       <div className="flex items-center gap-2 text-sm text-gray-700">
                         <Moon className="size-4 text-indigo-500 shrink-0" />
-                        <span>{booking.numberOfNights} คืน</span>
+                        <span>{booking.numberOfNights} {booking.numberOfNights === 1 ? "night" : "nights"}</span>
                       </div>
-
                       {booking.createdAt && (
                         <div className="flex items-center gap-2 text-xs text-gray-500">
                           <CalendarDays className="size-3.5 shrink-0" />
-                          <span>จองเมื่อ {format(new Date(booking.createdAt), "d MMM yyyy")}</span>
+                          <span>Booked on {format(new Date(booking.createdAt), "d MMM yyyy")}</span>
                         </div>
                       )}
-
                       <Separator />
-
                       <div className="flex gap-2 pt-1">
                         <Button
                           variant="outline"
@@ -257,19 +254,20 @@ export default function MyBookings() {
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle>ยืนยันการยกเลิกการจอง</AlertDialogTitle>
+                              <AlertDialogTitle>Cancel Booking</AlertDialogTitle>
                               <AlertDialogDescription>
-                                ต้องการยกเลิกการจองที่ <span className="font-semibold">{booking.hotel.name}</span>{" "}
-                                (เช็คอิน {format(new Date(booking.checkInDate), "d MMM yyyy")}) ใช่หรือไม่?
+                                Are you sure you want to cancel your booking at{" "}
+                                <span className="font-semibold">{booking.hotel.name}</span>{" "}
+                                (check-in {format(new Date(booking.checkInDate), "d MMM yyyy")})?
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                              <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
                               <AlertDialogAction
                                 onClick={() => handleDelete(booking._id)}
                                 className="bg-red-600 hover:bg-red-700"
                               >
-                                ยืนยันลบ
+                                Confirm Delete
                               </AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>

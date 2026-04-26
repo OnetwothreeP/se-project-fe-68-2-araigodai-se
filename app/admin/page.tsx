@@ -162,7 +162,7 @@ export default function AdminDashboard() {
             </div>
             <div>
               <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-              <p className="text-sm text-gray-500">จัดการการจองทั้งหมดในระบบ</p>
+              <p className="text-sm text-gray-500">Manage all hotel bookings in the system</p>
             </div>
           </div>
           <div className="flex gap-2">
@@ -223,14 +223,14 @@ export default function AdminDashboard() {
             ) : bookings.length === 0 ? (
               <div className="py-16 text-center text-gray-400">
                 <Hotel className="size-10 mx-auto mb-3 opacity-40" />
-                <p>ยังไม่มีการจอง</p>
+                <p>No bookings yet</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-gray-50">
-                      <TableHead className="w-24">Booking</TableHead>
+                      <TableHead className="w-28">Booking</TableHead>
                       <TableHead>Hotel</TableHead>
                       <TableHead>Check-in</TableHead>
                       <TableHead>Check-out</TableHead>
@@ -278,11 +278,7 @@ export default function AdminDashboard() {
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => openEditDialog(booking)}
-                              >
+                              <Button variant="outline" size="sm" onClick={() => openEditDialog(booking)}>
                                 <Edit className="size-3.5 mr-1" />
                                 Edit
                               </Button>
@@ -295,21 +291,21 @@ export default function AdminDashboard() {
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
                                   <AlertDialogHeader>
-                                    <AlertDialogTitle>ยืนยันการลบการจอง</AlertDialogTitle>
+                                    <AlertDialogTitle>Delete Booking</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                      ต้องการลบการจอง {shortId(booking._id)} ที่{" "}
+                                      Are you sure you want to delete booking {shortId(booking._id)} at{" "}
                                       <span className="font-semibold">{hotelName}</span>{" "}
-                                      (เช็คอิน {format(new Date(booking.checkInDate), "d MMM yyyy")}) ใช่หรือไม่?
-                                      การกระทำนี้ไม่สามารถย้อนกลับได้
+                                      (check-in {format(new Date(booking.checkInDate), "d MMM yyyy")})?
+                                      This action cannot be undone.
                                     </AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
-                                    <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
                                     <AlertDialogAction
                                       onClick={() => handleDelete(booking._id)}
                                       className="bg-red-600 hover:bg-red-700"
                                     >
-                                      ยืนยันลบ
+                                      Delete
                                     </AlertDialogAction>
                                   </AlertDialogFooter>
                                 </AlertDialogContent>
@@ -332,19 +328,16 @@ export default function AdminDashboard() {
             <DialogHeader>
               <DialogTitle>{isCreating ? "Create Booking" : "Edit Booking"}</DialogTitle>
               <DialogDescription>
-                {isCreating ? "สร้างการจองใหม่ (สูงสุด 3 คืน)" : "แก้ไขรายละเอียดการจอง (สูงสุด 3 คืน)"}
+                {isCreating ? "Create a new booking (max 3 nights)" : "Update the booking details (max 3 nights)"}
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4 py-2">
-              {/* Current booking info (edit mode) */}
               {editingBooking && !isCreating && (
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 space-y-1 text-sm">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="font-mono text-xs">
-                      {shortId(editingBooking._id)}
-                    </Badge>
-                  </div>
+                  <Badge variant="outline" className="font-mono text-xs">
+                    {shortId(editingBooking._id)}
+                  </Badge>
                   <p className="text-gray-600">
                     Hotel:{" "}
                     <span className="font-medium text-gray-900">
@@ -354,13 +347,12 @@ export default function AdminDashboard() {
                 </div>
               )}
 
-              {/* Hotel select (create mode) */}
               {isCreating && (
                 <div className="space-y-2">
                   <Label>Hotel</Label>
                   <Select value={selectedHotelId} onValueChange={setSelectedHotelId}>
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="เลือกโรงแรม" />
+                      <SelectValue placeholder="Select a hotel" />
                     </SelectTrigger>
                     <SelectContent>
                       {hotels.map((hotel) => (
@@ -373,14 +365,13 @@ export default function AdminDashboard() {
                 </div>
               )}
 
-              {/* Check-in Date */}
               <div className="space-y-2">
                 <Label>Check-in Date</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant="outline" className="w-full justify-start text-left font-normal">
                       <CalendarIcon className="mr-2 size-4" />
-                      {checkInDate ? format(checkInDate, "PPP") : "เลือกวันที่"}
+                      {checkInDate ? format(checkInDate, "PPP") : "Pick a date"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
@@ -395,47 +386,45 @@ export default function AdminDashboard() {
                 </Popover>
               </div>
 
-              {/* Number of Nights */}
               <div className="space-y-2">
-                <Label>จำนวนคืน</Label>
+                <Label>Number of Nights</Label>
                 <Select value={numberOfNights} onValueChange={setNumberOfNights}>
                   <SelectTrigger className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="1">1 คืน</SelectItem>
-                    <SelectItem value="2">2 คืน</SelectItem>
-                    <SelectItem value="3">3 คืน</SelectItem>
+                    <SelectItem value="1">1 Night</SelectItem>
+                    <SelectItem value="2">2 Nights</SelectItem>
+                    <SelectItem value="3">3 Nights</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
-              {/* Summary */}
               {checkInDate && checkOutDate && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 space-y-2">
-                  <p className="text-sm font-semibold">สรุปการจอง</p>
+                  <p className="text-sm font-semibold">Booking Summary</p>
                   <Separator />
                   <div className="space-y-1 text-sm">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 text-gray-600">
                         <LogIn className="size-3.5 text-green-600" />
-                        เช็คอิน
+                        Check-in
                       </div>
                       <span className="font-medium">{format(checkInDate, "d MMM yyyy")}</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 text-gray-600">
                         <LogOut className="size-3.5 text-red-500" />
-                        เช็คเอาต์
+                        Check-out
                       </div>
                       <span className="font-medium">{format(checkOutDate, "d MMM yyyy")}</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 text-gray-600">
                         <Moon className="size-3.5 text-indigo-500" />
-                        จำนวนคืน
+                        Nights
                       </div>
-                      <span className="font-medium">{numberOfNights} คืน</span>
+                      <span className="font-medium">{numberOfNights} {Number(numberOfNights) === 1 ? "night" : "nights"}</span>
                     </div>
                   </div>
                 </div>
@@ -443,11 +432,9 @@ export default function AdminDashboard() {
             </div>
 
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                ยกเลิก
-              </Button>
+              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
               <Button onClick={handleSaveBooking} disabled={isSaving || !checkInDate}>
-                {isSaving ? "กำลังบันทึก..." : isCreating ? "สร้างการจอง" : "บันทึกการเปลี่ยนแปลง"}
+                {isSaving ? "Saving..." : isCreating ? "Create Booking" : "Save Changes"}
               </Button>
             </DialogFooter>
           </DialogContent>

@@ -141,9 +141,8 @@ export default function EditBooking() {
                 </Alert>
               )}
 
-              {/* Booking Info Summary */}
               {booking && (
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-2">
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-1.5">
                   <div className="flex items-center gap-2 text-sm font-medium">
                     <Hotel className="size-4 text-blue-600" />
                     {booking.hotel.name}
@@ -153,7 +152,7 @@ export default function EditBooking() {
                   )}
                   {booking.createdAt && (
                     <p className="text-xs text-gray-400 pl-6">
-                      จองเมื่อ {format(new Date(booking.createdAt), "d MMM yyyy, HH:mm")}
+                      Booked on {format(new Date(booking.createdAt), "d MMM yyyy, HH:mm")}
                     </p>
                   )}
                 </div>
@@ -161,17 +160,13 @@ export default function EditBooking() {
 
               <Separator />
 
-              {/* Check-in Date */}
               <div className="space-y-2">
-                <Label>วันเช็คอิน</Label>
+                <Label>Check-in Date</Label>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start text-left font-normal"
-                    >
+                    <Button variant="outline" className="w-full justify-start text-left font-normal">
                       <CalendarIcon className="mr-2 size-4" />
-                      {checkInDate ? format(checkInDate, "PPP") : "เลือกวันที่"}
+                      {checkInDate ? format(checkInDate, "PPP") : "Pick a date"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
@@ -189,9 +184,8 @@ export default function EditBooking() {
                 </Popover>
               </div>
 
-              {/* Number of Nights */}
               <div className="space-y-2">
-                <Label>จำนวนคืน</Label>
+                <Label>Number of Nights</Label>
                 <Select
                   value={numberOfNights}
                   onValueChange={(value) => {
@@ -200,43 +194,42 @@ export default function EditBooking() {
                   }}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="เลือกจำนวนคืน" />
+                    <SelectValue placeholder="Select number of nights" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="1">1 คืน</SelectItem>
-                    <SelectItem value="2">2 คืน</SelectItem>
-                    <SelectItem value="3">3 คืน</SelectItem>
+                    <SelectItem value="1">1 Night</SelectItem>
+                    <SelectItem value="2">2 Nights</SelectItem>
+                    <SelectItem value="3">3 Nights</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-sm text-gray-500">จำนวนคืนสูงสุด 3 คืน</p>
+                <p className="text-sm text-gray-500">Maximum stay is 3 nights</p>
               </div>
 
-              {/* Updated Booking Summary */}
               {checkInDate && checkOutDate && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-2">
-                  <h4 className="font-semibold text-sm">สรุปการจองที่อัปเดต</h4>
+                  <h4 className="font-semibold text-sm">Updated Booking Summary</h4>
                   <Separator />
                   <div className="space-y-2 text-sm">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 text-gray-600">
                         <LogIn className="size-3.5 text-green-600" />
-                        <span>เช็คอิน</span>
+                        <span>Check-in</span>
                       </div>
                       <span className="font-medium">{format(checkInDate, "d MMM yyyy")}</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 text-gray-600">
                         <LogOut className="size-3.5 text-red-500" />
-                        <span>เช็คเอาต์</span>
+                        <span>Check-out</span>
                       </div>
                       <span className="font-medium">{format(checkOutDate, "d MMM yyyy")}</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 text-gray-600">
                         <Moon className="size-3.5 text-indigo-500" />
-                        <span>จำนวนคืน</span>
+                        <span>Nights</span>
                       </div>
-                      <span className="font-medium">{numberOfNights} คืน</span>
+                      <span className="font-medium">{numberOfNights} {Number(numberOfNights) === 1 ? "night" : "nights"}</span>
                     </div>
                   </div>
                 </div>
@@ -244,20 +237,11 @@ export default function EditBooking() {
             </CardContent>
 
             <div className="px-6 pb-6 flex gap-4">
-              <Button
-                type="button"
-                variant="outline"
-                className="flex-1"
-                onClick={() => router.push("/bookings")}
-              >
-                ยกเลิก
+              <Button type="button" variant="outline" className="flex-1" onClick={() => router.push("/bookings")}>
+                Cancel
               </Button>
-              <Button
-                type="submit"
-                className="flex-1"
-                disabled={isLoading || !checkInDate}
-              >
-                {isLoading ? "กำลังบันทึก..." : "บันทึกการเปลี่ยนแปลง"}
+              <Button type="submit" className="flex-1" disabled={isLoading || !checkInDate}>
+                {isLoading ? "Saving..." : "Save Changes"}
               </Button>
             </div>
           </form>
