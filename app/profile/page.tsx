@@ -95,6 +95,13 @@ export default function Profile() {
   const onSubmit = async (data: ProfileFormData) => {
     setError("");
     setSuccessMessage("");
+
+    // Required field validation (US1-3)
+    if (!data.name?.trim() || !data.telephone?.trim()) {
+      setError("Please fill in all required fields.");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -176,7 +183,7 @@ export default function Profile() {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name" className="font-semibold">Full Name</Label>
+                  <Label htmlFor="name" className="font-semibold">Full Name <span className="text-red-500">*</span></Label>
                   <Input
                     id="name"
                     type="text"
@@ -185,7 +192,7 @@ export default function Profile() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="telephone" className="font-semibold">Telephone</Label>
+                  <Label htmlFor="telephone" className="font-semibold">Telephone <span className="text-red-500">*</span></Label>
                   <Input
                     id="telephone"
                     type="tel"
