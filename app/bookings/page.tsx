@@ -113,6 +113,7 @@ export default function MyBookings() {
   const BookingActions = ({ booking }: { booking: Booking }) => {
     const isCancelled = booking.status === "cancelled";
     const isPaid = booking.paymentStatus === "paid" || booking.status === "confirmed";
+    const isUnpaid = booking.paymentStatus === "unpaid";
     const needsPayment = !isPaid && !isCancelled;
 
     return (
@@ -127,7 +128,7 @@ export default function MyBookings() {
             <CheckCircle2 className="size-3.5 mr-1 text-green-600" /> Confirmation
           </Button>
         )}
-        {!isCancelled && (
+        {!isCancelled && isPaid && (
           <Button
             variant="outline"
             size="sm"
@@ -136,7 +137,8 @@ export default function MyBookings() {
             <Edit className="size-3.5 mr-1" /> Edit
           </Button>
         )}
-        {!isCancelled && (
+        {/* Only show Cancel for paid bookings — unpaid bookings can just be abandoned */}
+        {!isCancelled && isPaid && (
           <Button
             variant="outline"
             size="sm"
@@ -346,8 +348,13 @@ export default function MyBookings() {
                       {cancelTarget && cancelTarget.totalPrice > 0 && (
                         <p className="text-xs mt-1">
                           Refund amount:{" "}
-                          <strong>{fmtMoney(Math.round(cancelTarget.totalPrice * refundPolicy.rate))}</strong>
-                          {" "}of {fmtMoney(cancelTarget.totalPrice)}
+                          <strong>
+                            {cancelTarget.paymentStatus === "unpaid"
+                              ? fmtMoney(0)
+                              : fmtMoney(Math.round((cancelTarget.amountPaid ?? cancelTarget.totalPrice) * refundPolicy.rate))
+                            }
+                          </strong>
+                          {" "}of {fmtMoney(cancelTarget.amountPaid ?? cancelTarget.totalPrice)}
                         </p>
                       )}
                     </div>
