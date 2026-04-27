@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   CalendarIcon, Hotel, LogIn, LogOut, Moon,
-  ArrowLeft, Loader2, CheckCircle2, Clock,
+  ArrowLeft, Loader2, CheckCircle2, AlertTriangle, XCircle,
 } from "lucide-react";
 import { format, addDays } from "date-fns";
 import { apiRequest } from "@/lib/api";
@@ -26,6 +26,7 @@ interface Booking {
   totalPrice: number;
   paymentStatus: string;
   status: string;
+  roomType?: string;
   createdAt?: string;
 }
 
@@ -41,9 +42,14 @@ export default function EditBooking() {
   const [checkInDate, setCheckInDate]       = useState<Date>();
   const [numberOfNights, setNumberOfNights] = useState<string>("1");
 
+  // Availability check state
+  const [isCheckingAvail, setIsCheckingAvail] = useState(false);
+  const [availError, setAvailError]           = useState(""); // "No rooms available…"
+  const [availOk, setAvailOk]                 = useState<boolean | null>(null);
+
   const [isLoading, setIsLoading]           = useState(false);
   const [error, setError]                   = useState("");
-  const [submitted, setSubmitted]           = useState(false);
+  const [success, setSuccess]               = useState(false);
 
   useEffect(() => { fetchBooking(); }, [bookingId]);
 
@@ -63,23 +69,64 @@ export default function EditBooking() {
     }
   }
 
-  async function handleSubmitRequest() {
+  // Check availability whenever date or nights change
+  const checkAvailability = useCallback(async (date: Date, nights: string, b: Booking) => {
+    if (!b.hotel._id) return;
+    setIsCheckingAvail(true);
+    setAvailError("");
+    setAvailOk(null);
+    try {
+      const params = new URLSearchParams({
+        checkInDate: format(date, "yyyy-MM-dd"),
+        numberOfNights: nights,
+        ...(b.roomType ? { roomType: b.roomType } : {}),
+        excludeBookingId: b._id, // exclude self to avoid false conflict
+      });
+      const data = await apiRequest(`/hotels/${b.hotel._id}/availability?${params}`);
+      if (data.isAvailable === false) {
+        setAvailError("No rooms available on the selected dates.");
+        setAvailOk(false);
+      } else {
+        setAvailOk(true);
+      }
+    } catch {
+      // Non-fatal — allow save if availability check fails
+      setAvailOk(null);
+    } finally {
+      setIsCheckingAvail(false);
+    }
+  }, []);
+
+  function handleDateChange(date: Date | undefined) {
+    setCheckInDate(date);
+    setAvailOk(null);
+    setAvailError("");
+    if (date && booking) checkAvailability(date, numberOfNights, booking);
+  }
+
+  function handleNightsChange(nights: string) {
+    setNumberOfNights(nights);
+    setAvailOk(null);
+    setAvailError("");
+    if (checkInDate && booking) checkAvailability(checkInDate, nights, booking);
+  }
+
+  async function handleSave() {
     if (!checkInDate || !booking) return;
+    if (availOk === false) return; // blocked by availability
     setError("");
     setIsLoading(true);
     try {
-      // POST /api/v1/bookings/:id/request — creates a pending request for admin approval
-      await apiRequest(`/bookings/${bookingId}/request`, {
-        method: "POST",
+      await apiRequest(`/bookings/${bookingId}`, {
+        method: "PUT",
         body: JSON.stringify({
-          type: "edit",
-          newCheckInDate: format(checkInDate, "yyyy-MM-dd"),
-          newNumberOfNights: Number(numberOfNights),
+          checkInDate: format(checkInDate, "yyyy-MM-dd"),
+          numberOfNights: Number(numberOfNights),
         }),
       });
-      setSubmitted(true);
+      setSuccess(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to submit request");
+      setError(err instanceof Error ? err.message : "Failed to update booking");
     } finally {
       setIsLoading(false);
     }
@@ -112,33 +159,38 @@ export default function EditBooking() {
 
   const isCancelled = booking.status === "cancelled";
 
-  // ── Submitted state ──
-  if (submitted) {
+  // ── Success state ──
+  if (success) {
     return (
       <div className="min-h-screen w-full bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="max-w-2xl mx-auto px-4 py-8">
           <Card>
             <CardContent className="py-10 text-center space-y-4">
-              <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mx-auto">
-                <Clock className="size-8 text-blue-600" />
+              <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto">
+                <CheckCircle2 className="size-8 text-green-600" />
               </div>
-              <h2 className="text-xl font-bold">Request Submitted</h2>
-              <p className="text-gray-500 text-sm max-w-sm mx-auto">
-                Your date change request for <strong>{booking.hotel.name}</strong> has been submitted
-                and is pending admin approval. You will be notified once it is reviewed.
+              <h2 className="text-xl font-bold">Booking date changed successfully</h2>
+              <p className="text-gray-500 text-sm">
+                Your booking at <strong>{booking.hotel.name}</strong> has been updated.
               </p>
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800 max-w-sm mx-auto text-left space-y-1">
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Requested check-in</span>
-                  <span className="font-medium">{checkInDate ? format(checkInDate, "d MMM yyyy") : "—"}</span>
+              {checkInDate && checkOutDate && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-sm max-w-xs mx-auto text-left space-y-1">
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">New check-in</span>
+                    <span className="font-medium">{format(checkInDate, "d MMM yyyy")}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">New check-out</span>
+                    <span className="font-medium">{format(checkOutDate, "d MMM yyyy")}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Nights</span>
+                    <span className="font-medium">{numberOfNights}</span>
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Requested nights</span>
-                  <span className="font-medium">{numberOfNights}</span>
-                </div>
-              </div>
+              )}
               <Button variant="outline" onClick={() => router.push("/bookings")}>
-                Back to My Bookings
+                View My Bookings
               </Button>
             </CardContent>
           </Card>
@@ -158,9 +210,9 @@ export default function EditBooking() {
           <CardHeader>
             <div className="flex items-start justify-between gap-2">
               <div>
-                <CardTitle>Request Date Change</CardTitle>
+                <CardTitle>Change Booking Date</CardTitle>
                 <CardDescription>
-                  Submit a request to change your booking dates. An admin will review and approve it.
+                  Select new check-in date and number of nights (maximum 3 nights)
                 </CardDescription>
               </div>
               <Badge variant="outline" className="font-mono text-xs shrink-0">
@@ -170,15 +222,6 @@ export default function EditBooking() {
           </CardHeader>
 
           <CardContent className="space-y-6">
-            {/* Info banner */}
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800 flex items-start gap-2">
-              <Clock className="size-4 shrink-0 mt-0.5" />
-              <span>
-                Date changes require admin approval. Your booking will not be modified until the request is approved.
-              </span>
-            </div>
-
-            {/* Cancelled warning */}
             {isCancelled && (
               <Alert variant="destructive">
                 <AlertDescription>This booking is cancelled and cannot be edited.</AlertDescription>
@@ -230,7 +273,7 @@ export default function EditBooking() {
                     <Calendar
                       mode="single"
                       selected={checkInDate}
-                      onSelect={(date) => setCheckInDate(date)}
+                      onSelect={handleDateChange}
                       disabled={(date) => date < new Date()}
                       initialFocus
                     />
@@ -241,7 +284,7 @@ export default function EditBooking() {
               {/* Number of nights */}
               <div className="space-y-2">
                 <Label>Number of Nights</Label>
-                <Select value={numberOfNights} onValueChange={setNumberOfNights}>
+                <Select value={numberOfNights} onValueChange={handleNightsChange}>
                   <SelectTrigger className="w-full">
                     <SelectValue />
                   </SelectTrigger>
@@ -254,10 +297,34 @@ export default function EditBooking() {
                 <p className="text-xs text-gray-500">Maximum stay is 3 nights</p>
               </div>
 
+              {/* Availability status */}
+              {checkInDate && (
+                <div>
+                  {isCheckingAvail && (
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <Loader2 className="size-3.5 animate-spin" />
+                      Checking availability…
+                    </div>
+                  )}
+                  {!isCheckingAvail && availOk === true && (
+                    <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+                      <CheckCircle2 className="size-4 shrink-0" />
+                      Rooms available for the selected dates.
+                    </div>
+                  )}
+                  {!isCheckingAvail && availOk === false && (
+                    <div className="flex items-center gap-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                      <XCircle className="size-4 shrink-0" />
+                      No rooms available on the selected dates.
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Preview */}
               {checkInDate && checkOutDate && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-2">
-                  <h4 className="font-semibold text-sm text-blue-800">Requested Change Preview</h4>
+                  <h4 className="font-semibold text-sm text-blue-800">Updated Booking Preview</h4>
                   <Separator />
                   <div className="space-y-2 text-sm">
                     <div className="flex items-center justify-between">
@@ -294,12 +361,12 @@ export default function EditBooking() {
               </Button>
               <Button
                 className="flex-1"
-                disabled={isLoading || !checkInDate || isCancelled}
-                onClick={handleSubmitRequest}
+                disabled={isLoading || !checkInDate || isCancelled || availOk === false || isCheckingAvail}
+                onClick={handleSave}
               >
                 {isLoading
-                  ? <><Loader2 className="size-4 mr-2 animate-spin" /> Submitting…</>
-                  : <><CheckCircle2 className="size-4 mr-2" /> Submit Request</>
+                  ? <><Loader2 className="size-4 mr-2 animate-spin" /> Saving…</>
+                  : "Save Changes"
                 }
               </Button>
             </div>
