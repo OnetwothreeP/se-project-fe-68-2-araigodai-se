@@ -1,25 +1,19 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import { CheckCircle } from "lucide-react";
 
 export default function RegisterSuccess() {
   const router = useRouter();
-  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const handleContinue = () => {
-    // Check user role from token and redirect accordingly
     const token = localStorage.getItem("token");
     if (token) {
       try {
         const payload = JSON.parse(atob(token.split(".")[1]));
         const role = payload.role;
-        
         if (role === "admin") {
           router.push("/admin");
         } else if (role === "owner") {
@@ -49,32 +43,13 @@ export default function RegisterSuccess() {
             Your account has been created successfully
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="flex items-start space-x-3 p-4 bg-gray-50 rounded-lg">
-            <Checkbox
-              id="terms"
-              checked={agreedToTerms}
-              onCheckedChange={(checked) => setAgreedToTerms(checked === true)}
-            />
-            <div className="space-y-1 leading-none">
-              <Label
-                htmlFor="terms"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-              >
-                I agree to the Terms and Conditions
-              </Label>
-              <p className="text-sm text-gray-500">
-                By continuing, you accept our terms of service and privacy policy
-              </p>
-            </div>
-          </div>
+        <CardContent>
+          <p className="text-sm text-center text-gray-500">
+            Welcome to araigodai Hotel Booking. You can now browse and book hotels.
+          </p>
         </CardContent>
         <CardFooter>
-          <Button
-            onClick={handleContinue}
-            className="w-full"
-            disabled={!agreedToTerms}
-          >
+          <Button onClick={handleContinue} className="w-full">
             Continue to Dashboard
           </Button>
         </CardFooter>
