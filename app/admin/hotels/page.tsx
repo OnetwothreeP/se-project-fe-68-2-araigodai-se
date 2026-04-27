@@ -9,7 +9,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Edit, Hotel as HotelIcon, MapPin, Phone, Plus, Trash2 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ArrowLeft, Edit, Hotel as HotelIcon, MapPin, Phone, Plus, Trash2, UserCheck } from "lucide-react";
 import { apiRequest } from "@/lib/api";
 
 interface Hotel {
@@ -17,6 +18,13 @@ interface Hotel {
   name: string;
   address: string;
   telephone: string;
+  ownerId?: string;
+}
+
+interface Owner {
+  _id: string;
+  name: string;
+  email: string;
 }
 
 interface FormErrors {
@@ -27,21 +35,25 @@ interface FormErrors {
 
 export default function AdminHotels() {
   const router = useRouter();
-  const [hotels, setHotels] = useState<Hotel[]>([]);
+  const [hotels,    setHotels]    = useState<Hotel[]>([]);
+  const [owners,    setOwners]    = useState<Owner[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string>("");
+  const [error,     setError]     = useState<string>("");
+
   const [editingHotel, setEditingHotel] = useState<Hotel | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isCreating, setIsCreating] = useState(false);
-  const [formData, setFormData] = useState({ name: "", address: "", telephone: "" });
+  const [isSaving,     setIsSaving]     = useState(false);
+  const [isCreating,   setIsCreating]   = useState(false);
+
+  const [formData,   setFormData]   = useState({ name: "", address: "", telephone: "", ownerId: "" });
   const [formErrors, setFormErrors] = useState<FormErrors>({});
 
   useEffect(() => {
     fetchAllHotels();
+    fetchOwners();
   }, []);
 
-  const fetchAllHotels = async () => {
+  async function fetchAllHotels() {
     setIsLoading(true);
     setError("");
     try {
@@ -52,56 +64,78 @@ export default function AdminHotels() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }
 
-  const handleDelete = async (hotelId: string) => {
+  async function fetchOwners() {
+    try {
+      // GET /api/v1/auth/users?role=owner — admin only
+      const data = await apiRequest("/auth/users?role=owner");
+      setOwners(data.data || []);
+    } catch {
+      setOwners([]);
+    }
+  }
+
+  async function handleDelete(hotelId: string) {
     try {
       await apiRequest(`/hotels/${hotelId}`, { method: "DELETE" });
       setHotels((prev) => prev.filter((h) => h._id !== hotelId));
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed to delete hotel");
     }
-  };
+  }
 
-  const openCreateDialog = () => {
+  function openCreateDialog() {
     setIsCreating(true);
     setEditingHotel(null);
-    setFormData({ name: "", address: "", telephone: "" });
+    setFormData({ name: "", address: "", telephone: "", ownerId: "" });
     setFormErrors({});
     setIsDialogOpen(true);
-  };
+  }
 
-  const openEditDialog = (hotel: Hotel) => {
+  function openEditDialog(hotel: Hotel) {
     setIsCreating(false);
     setEditingHotel(hotel);
-    setFormData({ name: hotel.name, address: hotel.address, telephone: hotel.telephone });
+    setFormData({
+      name:      hotel.name,
+      address:   hotel.address,
+      telephone: hotel.telephone,
+      ownerId:   hotel.ownerId ?? "",
+    });
     setFormErrors({});
     setIsDialogOpen(true);
-  };
+  }
 
-  const validate = (): boolean => {
+  function validate(): boolean {
     const errors: FormErrors = {};
-    if (!formData.name.trim()) errors.name = "Hotel name is required";
-    if (!formData.address.trim()) errors.address = "Address is required";
+    if (!formData.name.trim())      errors.name      = "Hotel name is required";
+    if (!formData.address.trim())   errors.address   = "Address is required";
     if (!formData.telephone.trim()) errors.telephone = "Telephone is required";
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
-  };
+  }
 
-  const handleSaveHotel = async () => {
+  async function handleSaveHotel() {
     if (!validate()) return;
     setIsSaving(true);
     try {
+      const payload = {
+        name:      formData.name,
+        address:   formData.address,
+        telephone: formData.telephone,
+        ...(formData.ownerId ? { ownerId: formData.ownerId } : {}),
+      };
+
       if (isCreating) {
         const result = await apiRequest("/hotels", {
           method: "POST",
-          body: JSON.stringify(formData),
+          body: JSON.stringify(payload),
         });
         setHotels((prev) => [...prev, result.data]);
       } else if (editingHotel) {
         const result = await apiRequest(`/hotels/${editingHotel._id}`, {
           method: "PUT",
-          body: JSON.stringify(formData),
+          body: JSON.stringify(payload),
         });
         setHotels((prev) =>
           prev.map((h) => (h._id === editingHotel._id ? result.data : h))
@@ -109,11 +143,15 @@ export default function AdminHotels() {
       }
       setIsDialogOpen(false);
     } catch (err) {
-      alert(err instanceof Error ? err.message : `Failed to ${isCreating ? "create" : "update"} hotel`);
+      alert(
+        err instanceof Error
+          ? err.message
+          : `Failed to ${isCreating ? "create" : "update"} hotel`
+      );
     } finally {
       setIsSaving(false);
     }
-  };
+  }
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -142,7 +180,7 @@ export default function AdminHotels() {
           </div>
           <div>
             <h1 className="text-2xl font-bold">Hotel Management</h1>
-            <p className="text-sm text-gray-500">Create, update, and delete hotels</p>
+            <p className="text-sm text-gray-500">Create, update, and delete hotels on behalf of owners</p>
           </div>
         </div>
 
@@ -174,7 +212,7 @@ export default function AdminHotels() {
             <CardContent className="py-16 text-center text-gray-400">
               <HotelIcon className="size-12 mx-auto mb-3 opacity-40" />
               <p className="font-medium">No hotels yet</p>
-              <p className="text-sm mt-1">Click "Add Hotel" to get started</p>
+              <p className="text-sm mt-1">Click &ldquo;Add Hotel&rdquo; to get started</p>
             </CardContent>
           </Card>
         ) : (
@@ -202,10 +240,21 @@ export default function AdminHotels() {
                       <Phone className="size-3.5 shrink-0 text-gray-400" />
                       <span>{hotel.telephone}</span>
                     </div>
+                    {hotel.ownerId && (
+                      <div className="flex items-center gap-2">
+                        <UserCheck className="size-3.5 shrink-0 text-blue-400" />
+                        <span className="text-xs text-blue-600 font-mono">{hotel.ownerId.slice(-6).toUpperCase()}</span>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
                 <CardFooter className="pt-0 pb-4 px-5 flex gap-2">
-                  <Button variant="outline" size="sm" className="flex-1" onClick={() => openEditDialog(hotel)}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => openEditDialog(hotel)}
+                  >
                     <Edit className="size-3.5 mr-1.5" />
                     Edit
                   </Button>
@@ -242,18 +291,20 @@ export default function AdminHotels() {
           </div>
         )}
 
-        {/* Create / Edit Dialog */}
+        {/* Create / Edit Dialog (US3-5) */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>{isCreating ? "Add New Hotel" : "Edit Hotel"}</DialogTitle>
               <DialogDescription>
-                {isCreating ? "Fill in the details for the new hotel" : `Update information for ${editingHotel?.name}`}
+                {isCreating
+                  ? "Fill in the details for the new hotel"
+                  : `Update information for ${editingHotel?.name}`}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-2">
               <div className="space-y-1.5">
-                <Label htmlFor="name">Hotel Name</Label>
+                <Label htmlFor="name">Hotel Name *</Label>
                 <Input
                   id="name"
                   value={formData.name}
@@ -264,7 +315,7 @@ export default function AdminHotels() {
                 {formErrors.name && <p className="text-xs text-red-500">{formErrors.name}</p>}
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="address">Address</Label>
+                <Label htmlFor="address">Address *</Label>
                 <Input
                   id="address"
                   value={formData.address}
@@ -275,7 +326,7 @@ export default function AdminHotels() {
                 {formErrors.address && <p className="text-xs text-red-500">{formErrors.address}</p>}
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="telephone">Telephone</Label>
+                <Label htmlFor="telephone">Telephone *</Label>
                 <Input
                   id="telephone"
                   value={formData.telephone}
@@ -285,11 +336,45 @@ export default function AdminHotels() {
                 />
                 {formErrors.telephone && <p className="text-xs text-red-500">{formErrors.telephone}</p>}
               </div>
+
+              {/* Owner assignment (US3-5) */}
+              <div className="space-y-1.5">
+                <Label htmlFor="owner">
+                  Assign Owner
+                  <span className="ml-1 text-xs text-gray-400">(optional)</span>
+                </Label>
+                {owners.length === 0 ? (
+                  <div className="rounded-md border border-dashed border-gray-300 px-3 py-2 text-xs text-gray-400">
+                    No users with Hotel Owner role found.
+                  </div>
+                ) : (
+                  <Select
+                    value={formData.ownerId || "none"}
+                    onValueChange={(v) => setFormData({ ...formData, ownerId: v === "none" ? "" : v })}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select an owner" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No owner assigned</SelectItem>
+                      {owners.map((o) => (
+                        <SelectItem key={o._id} value={o._id}>
+                          {o.name} ({o.email})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
               <Button onClick={handleSaveHotel} disabled={isSaving}>
-                {isSaving ? "Saving..." : isCreating ? "Add Hotel" : "Save Changes"}
+                {isSaving
+                  ? "Saving…"
+                  : isCreating
+                  ? "Add Hotel"
+                  : "Save Changes"}
               </Button>
             </DialogFooter>
           </DialogContent>
