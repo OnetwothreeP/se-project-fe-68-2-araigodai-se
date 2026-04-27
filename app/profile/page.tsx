@@ -42,6 +42,7 @@ export default function Profile() {
   const [isFetching, setIsFetching] = useState(true);
   const [showDeactivateDialog, setShowDeactivateDialog] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string>("");
+  const [email, setEmail] = useState<string>("");
 
   const {
     register,
@@ -73,6 +74,7 @@ export default function Profile() {
       });
 
       const data = result.data;
+      setEmail(data.email || "");
       setValue("name", data.name || "");
       setValue("telephone", data.telephone || "");
       setValue("houseNumber", data.houseNumber || "");
@@ -189,6 +191,19 @@ export default function Profile() {
                     type="tel"
                     {...register("telephone")}
                   />
+                </div>
+
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="email" className="font-semibold">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    readOnly
+                    disabled
+                    className="bg-gray-50 text-gray-500 cursor-not-allowed"
+                  />
+                  <p className="text-xs text-gray-400">Email cannot be changed.</p>
                 </div>
               </div>
             </CardContent>
