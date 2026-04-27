@@ -126,26 +126,29 @@ export default function OwnerDashboard() {
     const load = async () => {
       try {
         const [dashRes, reqRes, bkRes] = await Promise.all([
-          fetch(`${base}/hotels/${hotelId}/dashboard`, { headers }),
-          fetch(`${base}/hotels/${hotelId}/requests`,  { headers }),
-          fetch(`${base}/hotels/${hotelId}/bookings`,  { headers }),
+          fetch(`${base}/hotels/${hotelId}/dashboard`,          { headers }),
+          fetch(`${base}/hotels/${hotelId}/booking-requests`,   { headers }),
+          fetch(`${base}/hotels/${hotelId}/bookings`,           { headers }),
         ]);
 
-        if (dashRes.status === 403 || reqRes.status === 403 || bkRes.status === 403) {
+        if (dashRes.status === 403 || bkRes.status === 403) {
           router.replace("/error/403"); return;
         }
         if (dashRes.status === 404) { setLoadError("Hotel not found."); setIsLoading(false); return; }
 
         const [dashData, reqData, bkData] = await Promise.all([
-          dashRes.json(), reqRes.json(), bkRes.json(),
+          dashRes.json(),
+          reqRes.ok ? reqRes.json() : { data: [] },
+          bkRes.json(),
         ]);
 
         const d: DashboardData = dashData.data || dashData;
         setDashboard(d);
         setHotelName(d.hotel?.name || d.hotelName || "Hotel");
-        setRequests((reqData.data || reqData || []).filter(
-          (r: BookingRequest) => r.status === "pending"
-        ));
+
+        // New endpoint already scopes requests to this hotel
+        const allRequests: BookingRequest[] = reqData.data || reqData || [];
+        setRequests(allRequests.filter((r: BookingRequest) => r.status === "pending"));
         setBookings((bkData.data || bkData || []).filter(
           (b: HotelBooking) => b.status !== "cancelled"
         ));
@@ -165,8 +168,12 @@ export default function OwnerDashboard() {
     const token = localStorage.getItem("token")!;
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/booking-requests/${confirmApprove._id}/approve`,
-        { method: "PUT", headers: { Authorization: `Bearer ${token}` } }
+        `${process.env.NEXT_PUBLIC_API_URL}/bookings/requests/${confirmApprove._id}/respond`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ action: "approve", reason: "Approved by hotel owner" }),
+        }
       );
       if (res.status === 403) { router.replace("/error/403"); return; }
       if (!res.ok) throw new Error((await res.json()).message || "Failed");
@@ -185,8 +192,12 @@ export default function OwnerDashboard() {
     const token = localStorage.getItem("token")!;
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/booking-requests/${confirmReject._id}/reject`,
-        { method: "PUT", headers: { Authorization: `Bearer ${token}` } }
+        `${process.env.NEXT_PUBLIC_API_URL}/bookings/requests/${confirmReject._id}/respond`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ action: "reject", reason: "Rejected by hotel owner" }),
+        }
       );
       if (res.status === 403) { router.replace("/error/403"); return; }
       if (!res.ok) throw new Error((await res.json()).message || "Failed");
@@ -217,9 +228,9 @@ export default function OwnerDashboard() {
     const token = localStorage.getItem("token")!;
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/hotels/${hotelId}/bookings/${booking._id}/cancel`,
+        `${process.env.NEXT_PUBLIC_API_URL}/bookings/${booking._id}/cancel`,
         {
-          method: "PUT",
+          method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           body: JSON.stringify({ reason }),
         }
@@ -230,7 +241,7 @@ export default function OwnerDashboard() {
         return;
       }
       if (!res.ok) throw new Error((await res.json()).message || "Failed");
-      setBookings(b => b.map(x => x._id === booking._id ? { ...x, status: "cancelled" } : x));
+      setBookings(b => b.filter(x => x._id !== booking._id));
       addToast("Booking cancelled. Guest has been notified.", "success");
     } catch (err) {
       addToast(err instanceof Error ? err.message : "Cancellation failed.", "error");
@@ -247,13 +258,14 @@ export default function OwnerDashboard() {
     const token = localStorage.getItem("token")!;
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/hotels/${hotelId}/bookings/${editDialog._id}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/bookings/${editDialog._id}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           body: JSON.stringify({
             checkInDate: editForm.checkInDate,
             numberOfNights: parseInt(editForm.numberOfNights, 10),
+            reason: "Updated by hotel owner",
           }),
         }
       );

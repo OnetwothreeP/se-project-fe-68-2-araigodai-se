@@ -294,19 +294,19 @@ export default function Register() {
 
       {/* Privacy Policy Dialog */}
       <Dialog open={privacyOpen} onOpenChange={setPrivacyOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
-          <DialogHeader>
+        <DialogContent className="max-w-2xl h-[80vh] flex flex-col">
+          <DialogHeader className="shrink-0">
             <DialogTitle>Privacy Policy & Terms of Service</DialogTitle>
             <DialogDescription>
               araigodai · Effective: April 27, 2025
             </DialogDescription>
           </DialogHeader>
-          <ScrollArea className="flex-1 pr-4">
-            <pre className="text-sm text-gray-700 whitespace-pre-wrap font-sans leading-relaxed">
+          <ScrollArea className="flex-1 min-h-0 pr-4">
+            <div className="text-sm text-gray-700 leading-relaxed space-y-3 whitespace-pre-wrap">
               {PRIVACY_POLICY}
-            </pre>
+            </div>
           </ScrollArea>
-          <div className="flex justify-end gap-3 pt-4 border-t">
+          <div className="flex justify-end gap-3 pt-4 border-t shrink-0">
             <Button variant="outline" onClick={() => setPrivacyOpen(false)}>
               Close
             </Button>
