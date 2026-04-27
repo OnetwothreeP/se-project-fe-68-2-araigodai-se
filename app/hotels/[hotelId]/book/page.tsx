@@ -131,7 +131,7 @@ export default function BookHotel() {
     setIsLoading(true);
 
     try {
-      await apiRequest(`/hotels/${hotelId}/bookings`, {
+      const result = await apiRequest(`/hotels/${hotelId}/bookings`, {
         method: "POST",
         body: JSON.stringify({
           checkInDate: format(checkInDate, "yyyy-MM-dd"),
@@ -139,7 +139,8 @@ export default function BookHotel() {
           roomType: selectedRoom.id,
         }),
       });
-      router.push("/bookings");
+      // Redirect to payment page with the new booking ID
+      router.push(`/bookings/${result.data._id}/pay`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create booking");
     } finally {
