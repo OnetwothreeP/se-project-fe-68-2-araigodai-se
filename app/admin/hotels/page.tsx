@@ -27,6 +27,7 @@ interface RoomTypeDef {
   name: string;
   pricePerNight: number;
   totalRooms: number;
+  amenities: string[];
 }
 
 interface Owner {
@@ -58,9 +59,9 @@ export default function AdminHotels() {
 
   // Room types state
   const DEFAULT_ROOM_TYPES: RoomTypeDef[] = [
-    { id: "standard", name: "Standard Room", pricePerNight: 1200, totalRooms: 10 },
-    { id: "deluxe",   name: "Deluxe Room",   pricePerNight: 2500, totalRooms: 8  },
-    { id: "suite",    name: "Suite Room",    pricePerNight: 5000, totalRooms: 4  },
+    { id: "standard", name: "Standard Room", pricePerNight: 1200, totalRooms: 10, amenities: ["Single Bed", "Private Bathroom", "32\" TV", "Free Wi-Fi", "Air Conditioning"] },
+    { id: "deluxe",   name: "Deluxe Room",   pricePerNight: 2500, totalRooms: 8,  amenities: ["Queen Size Bed", "Private Bathroom", "43\" TV", "Free Wi-Fi", "Air Conditioning", "City View", "Minibar"] },
+    { id: "suite",    name: "Suite Room",    pricePerNight: 5000, totalRooms: 4,  amenities: ["King Size Bed", "Private Bathroom + Bathtub", "55\" TV", "Free Wi-Fi", "Air Conditioning", "Panoramic View", "Living Room", "Free Breakfast for 2"] },
   ];
   const [roomTypes, setRoomTypes] = useState<RoomTypeDef[]>(DEFAULT_ROOM_TYPES);
 
@@ -428,6 +429,22 @@ export default function AdminHotels() {
                             className="h-8 text-sm"
                           />
                         </div>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-gray-500">Amenities (comma-separated)</Label>
+                        <Input
+                          value={rt.amenities?.join(", ") ?? ""}
+                          onChange={(e) => {
+                            const updated = [...roomTypes];
+                            updated[idx] = {
+                              ...updated[idx],
+                              amenities: e.target.value.split(",").map((s) => s.trim()).filter(Boolean),
+                            };
+                            setRoomTypes(updated);
+                          }}
+                          placeholder="Free Wi-Fi, Air Conditioning, TV"
+                          className="h-8 text-sm"
+                        />
                       </div>
                     </div>
                   ))}

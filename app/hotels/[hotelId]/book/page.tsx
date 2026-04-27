@@ -31,6 +31,7 @@ interface HotelData {
     name: string;
     pricePerNight: number;
     totalRooms: number;
+    amenities: string[];
   }[];
 }
 
@@ -94,8 +95,11 @@ export default function BookHotel() {
       if (h.roomTypes && h.roomTypes.length > 0) {
         const merged: RoomType[] = h.roomTypes.map((rt) => ({
           ...rt,
+          // amenities come from API; image is still static per type id
           imageUrl: ROOM_TYPE_DEFAULTS[rt.id]?.imageUrl ?? `https://picsum.photos/seed/room-${rt.id}/600/400`,
-          amenities: ROOM_TYPE_DEFAULTS[rt.id]?.amenities ?? [],
+          amenities: rt.amenities && rt.amenities.length > 0
+            ? rt.amenities
+            : (ROOM_TYPE_DEFAULTS[rt.id]?.amenities ?? []),
         }));
         setRoomTypes(merged);
       } else {
