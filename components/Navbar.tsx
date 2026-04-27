@@ -97,11 +97,6 @@ export default function Navbar() {
           <div className="hidden md:flex items-center gap-2">
             {isAuthenticated ? (
               <>
-                {user?.role !== "owner" && (
-                  <Button variant="ghost" onClick={() => router.push("/hotels")}>
-                    Hotels
-                  </Button>
-                )}
                 {user?.role === "admin" ? (
                   <>
                     <Button variant="ghost" onClick={() => router.push("/admin")}>
@@ -112,18 +107,18 @@ export default function Navbar() {
                     </Button>
                   </>
                 ) : user?.role === "owner" ? (
+                  <Button variant="ghost" onClick={() => router.push("/owner/hotels")}>
+                    Hotel Settings
+                  </Button>
+                ) : (
                   <>
-                    <Button variant="ghost" onClick={() => router.push("/owner")}>
+                    <Button variant="ghost" onClick={() => router.push("/hotels")}>
                       Hotels
                     </Button>
-                    <Button variant="ghost" onClick={() => router.push("/owner/hotels")}>
-                      Hotel Settings
+                    <Button variant="ghost" onClick={() => router.push("/bookings")}>
+                      My Bookings
                     </Button>
                   </>
-                ) : (
-                  <Button variant="ghost" onClick={() => router.push("/bookings")}>
-                    My Bookings
-                  </Button>
                 )}
 
                 <DropdownMenu>
@@ -213,31 +208,7 @@ export default function Navbar() {
                   </SheetTrigger>
                   <SheetContent side="right" className="w-64">
                     <div className="flex flex-col gap-4 mt-8">
-                      {user?.role !== "owner" && (
-                        <Button
-                          variant="ghost"
-                          className="justify-start"
-                          onClick={() => {
-                            router.push("/hotels");
-                            setMobileMenuOpen(false);
-                          }}
-                        >
-                          Hotels
-                        </Button>
-                      )}
-                      {user?.role !== "owner" && (
-                        <Button
-                          variant="ghost"
-                          className="justify-start"
-                          onClick={() => {
-                            router.push("/bookings");
-                            setMobileMenuOpen(false);
-                          }}
-                        >
-                          My Bookings
-                        </Button>
-                      )}
-                      {user?.role === "admin" && (
+                      {user?.role === "admin" ? (
                         <>
                           <Button
                             variant="ghost"
@@ -260,28 +231,38 @@ export default function Navbar() {
                             Manage Roles
                           </Button>
                         </>
-                      )}
-                      {user?.role === "owner" && (
+                      ) : user?.role === "owner" ? (
+                        <Button
+                          variant="ghost"
+                          className="justify-start"
+                          onClick={() => {
+                            router.push("/owner/hotels");
+                            setMobileMenuOpen(false);
+                          }}
+                        >
+                          Hotel Settings
+                        </Button>
+                      ) : (
                         <>
                           <Button
                             variant="ghost"
                             className="justify-start"
                             onClick={() => {
-                              router.push("/owner");
+                              router.push("/hotels");
                               setMobileMenuOpen(false);
                             }}
                           >
-                            My Hotels
+                            Hotels
                           </Button>
                           <Button
                             variant="ghost"
                             className="justify-start"
                             onClick={() => {
-                              router.push("/owner/hotels");
+                              router.push("/bookings");
                               setMobileMenuOpen(false);
                             }}
                           >
-                            Hotel Settings
+                            My Bookings
                           </Button>
                         </>
                       )}

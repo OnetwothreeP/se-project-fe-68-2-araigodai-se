@@ -83,8 +83,31 @@ export default function BookHotel() {
   const { handleSubmit, setValue } = useForm<BookingFormData>();
 
   useEffect(() => {
+    // Check if user is owner or admin - they cannot book
+    const token = localStorage.getItem("token");
+    if (!token) {
+      router.replace("/login");
+      return;
+    }
+
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      if (payload.role === "owner") {
+        router.replace("/owner/hotels");
+        return;
+      }
+      if (payload.role === "admin") {
+        router.replace("/admin");
+        return;
+      }
+    } catch {
+      // Invalid token, continue to login redirect
+      router.replace("/login");
+      return;
+    }
+
     fetchHotelDetails();
-  }, [hotelId]);
+  }, [hotelId, router]);
 
   const fetchHotelDetails = async () => {
     try {

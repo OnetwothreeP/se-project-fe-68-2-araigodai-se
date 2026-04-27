@@ -51,7 +51,7 @@ export default function OwnerEditHotel() {
     const token = localStorage.getItem("token");
     if (!token) { router.replace("/login"); return; }
     const decoded = decodeToken(token);
-    if (!decoded || decoded.role !== "owner") { router.replace("/hotels"); return; }
+    if (!decoded || decoded.role !== "owner") { router.replace("/owner/hotels"); return; }
 
     const fetchHotel = async () => {
       try {

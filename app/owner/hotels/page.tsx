@@ -262,11 +262,6 @@ export default function OwnerHotelsManagement() {
                     alt={hotel.name}
                     className="w-full h-full object-cover"
                   />
-                  {hotel.pricePerNight && (
-                    <div className="absolute top-3 right-3 bg-white px-3 py-1 rounded-full text-sm font-semibold text-blue-600">
-                      ฿{hotel.pricePerNight.toLocaleString()}/night
-                    </div>
-                  )}
                 </div>
                 <CardContent className="pt-5 flex-1 space-y-3">
                   <div className="flex items-start justify-between gap-3">

@@ -15,6 +15,18 @@ interface HotelType {
   telephone: string;
 }
 
+interface JwtPayload {
+  role: string;
+}
+
+function decodeToken(token: string): JwtPayload | null {
+  try {
+    return JSON.parse(atob(token.split(".")[1]));
+  } catch {
+    return null;
+  }
+}
+
 export default function Hotels() {
   const router = useRouter();
   const [allHotels, setAllHotels] = useState<HotelType[]>([]); // Store all hotels
@@ -25,10 +37,43 @@ export default function Hotels() {
   const [limit, setLimit] = useState(6);
   const [totalPages, setTotalPages] = useState(1);
   const [sortBy, setSortBy] = useState<string>("name");
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   useEffect(() => {
-    fetchHotels();
-  }, [sortBy]);
+    // Check user role first before doing anything
+    const token = localStorage.getItem("token");
+    if (!token) {
+      router.replace("/login");
+      return;
+    }
+
+    const decoded = decodeToken(token);
+    if (!decoded) {
+      router.replace("/login");
+      return;
+    }
+
+    // Redirect owners and admins away from hotels page
+    if (decoded.role === "owner") {
+      router.replace("/owner/hotels");
+      return;
+    }
+    if (decoded.role === "admin") {
+      router.replace("/admin");
+      return;
+    }
+
+    // Only regular users can proceed (any role that's not owner or admin)
+    setUserRole(decoded.role);
+    setIsCheckingAuth(false);
+  }, [router]);
+
+  useEffect(() => {
+    if (!isCheckingAuth) {
+      fetchHotels();
+    }
+  }, [sortBy, isCheckingAuth]);
 
   useEffect(() => {
     // Update displayed hotels when page or limit changes
@@ -81,6 +126,15 @@ export default function Hotels() {
     ];
     return images[index % images.length];
   };
+
+  // Don't render anything while checking authentication
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen w-full bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-gray-500">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-blue-50 to-indigo-100">

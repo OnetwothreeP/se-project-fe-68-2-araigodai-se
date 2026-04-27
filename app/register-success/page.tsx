@@ -13,7 +13,26 @@ export default function RegisterSuccess() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const handleContinue = () => {
-    router.push("/hotels");
+    // Check user role from token and redirect accordingly
+    const token = localStorage.getItem("token");
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        const role = payload.role;
+        
+        if (role === "admin") {
+          router.push("/admin");
+        } else if (role === "owner") {
+          router.push("/owner/hotels");
+        } else {
+          router.push("/hotels");
+        }
+      } catch {
+        router.push("/hotels");
+      }
+    } else {
+      router.push("/login");
+    }
   };
 
   return (

@@ -40,9 +40,30 @@ export default function Login() {
 
       if (result.token) {
         localStorage.setItem("token", result.token);
+        
+        // Decode token to get user role
+        try {
+          const payload = JSON.parse(atob(result.token.split(".")[1]));
+          const role = payload.role;
+          
+          // Redirect based on role using replace to prevent back navigation
+          console.log(role)
+          if (role === "admin") {
+            router.replace("/admin");
+            return;
+          } else if (role === "owner") {
+            router.replace("/owner/hotels");
+            return;
+          } else {
+            router.replace("/hotels");
+            return;
+          }
+        } catch {
+          // If token decode fails, default to hotels page
+          router.replace("/hotels");
+          return;
+        }
       }
-
-      router.push("/hotels");
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred during login");
     } finally {

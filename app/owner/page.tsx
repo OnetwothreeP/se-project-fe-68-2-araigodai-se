@@ -45,7 +45,7 @@ export default function OwnerHotelList() {
 
     const decoded = decodeToken(token);
     if (!decoded || decoded.role !== "owner") {
-      router.replace("/hotels");
+      router.replace("/owner/hotels");
       return;
     }
 
