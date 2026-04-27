@@ -65,7 +65,13 @@ export default function Login() {
         }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred during login");
+      const msg = err instanceof Error ? err.message : "An error occurred during login";
+      // Backend sends specific message for deactivated accounts
+      if (msg.toLowerCase().includes("deactivated")) {
+        setError("This account has been deactivated. Please contact support.");
+      } else {
+        setError("Invalid username or password");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -89,7 +95,7 @@ export default function Login() {
           <CardContent className="space-y-4 mb-4">
             {error && (
               <Alert variant="destructive">
-                <AlertDescription>Invalid username or password</AlertDescription>
+                <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
 
