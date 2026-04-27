@@ -25,7 +25,6 @@ export default function Hotels() {
   const [limit, setLimit] = useState(6);
   const [totalPages, setTotalPages] = useState(1);
   const [sortBy, setSortBy] = useState<string>("name");
-  const [imgErrors, setImgErrors] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     fetchHotels();
@@ -71,6 +70,16 @@ export default function Hotels() {
 
   const handleBookNow = (hotelId: string) => {
     router.push(`/hotels/${hotelId}/book`);
+  };
+
+  const getHotelImage = (index: number) => {
+    const images = [
+      "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&auto=format&fit=crop",
+    ];
+    return images[index % images.length];
   };
 
   return (
@@ -147,21 +156,14 @@ export default function Hotels() {
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {hotels.map((hotel) => (
+              {hotels.map((hotel, index) => (
                 <Card key={hotel._id} className="hover:shadow-lg transition-shadow overflow-hidden">
                   <div className="relative w-full h-48 bg-gray-100">
-                    {!imgErrors[hotel._id] ? (
-                      <img
-                        src={`/hotels/${hotel._id}.jpg`}
-                        alt={hotel.name}
-                        className="w-full h-full object-cover"
-                        onError={() => setImgErrors((prev) => ({ ...prev, [hotel._id]: true }))}
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-blue-50">
-                        <Hotel className="size-16 text-blue-300" />
-                      </div>
-                    )}
+                    <img
+                      src={getHotelImage(index)}
+                      alt={hotel.name}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                   <CardHeader>
                     <CardTitle className="flex items-start gap-2">

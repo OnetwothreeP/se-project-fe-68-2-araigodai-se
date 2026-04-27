@@ -10,6 +10,9 @@ interface HotelItem {
   name: string;
   address: string;
   telephone: string;
+  description?: string;
+  pricePerNight?: number;
+  amenities?: string[];
 }
 
 interface JwtPayload {
@@ -41,7 +44,7 @@ export default function OwnerHotelList() {
     }
 
     const decoded = decodeToken(token);
-    if (!decoded || decoded.role !== "hotel_owner") {
+    if (!decoded || decoded.role !== "owner") {
       router.replace("/hotels");
       return;
     }
@@ -76,6 +79,16 @@ export default function OwnerHotelList() {
 
     fetchHotels();
   }, [router]);
+
+  const getHotelImage = (index: number) => {
+    const images = [
+      "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&auto=format&fit=crop",
+    ];
+    return images[index % images.length];
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -115,29 +128,56 @@ export default function OwnerHotelList() {
             <p className="text-gray-500 text-sm">You have no hotels to manage.</p>
           </div>
         ) : (
-          <div className="flex flex-col gap-3">
-            {hotels.map((hotel) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {hotels.map((hotel, index) => (
               <div
                 key={hotel._id}
-                className="bg-white rounded-xl border border-gray-200 shadow-sm px-6 py-5 flex items-center justify-between gap-4 flex-wrap"
+                className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow"
               >
-                <div className="flex items-center gap-4">
-                  <span className="text-3xl">🏨</span>
-                  <div>
-                    <div className="text-base font-semibold text-gray-900">{hotel.name}</div>
-                    <div className="flex items-center gap-1 text-sm text-gray-500 mt-0.5">
-                      <MapPin className="size-3.5 shrink-0" />
-                      {hotel.address}
-                    </div>
-                    <div className="flex items-center gap-1 text-sm text-gray-500 mt-0.5">
-                      <Phone className="size-3.5 shrink-0" />
-                      {hotel.telephone}
-                    </div>
+                <div className="relative h-48 bg-gray-200">
+                  <img
+                    src={getHotelImage(index)}
+                    alt={hotel.name}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute top-3 right-3 bg-white px-3 py-1 rounded-full text-sm font-semibold text-blue-600">
+                    {hotel.pricePerNight ? `฿${hotel.pricePerNight.toLocaleString()}/night` : 'Price not set'}
                   </div>
                 </div>
-                <Button onClick={() => router.push(`/owner/dashboard/${hotel._id}`)}>
-                  View Dashboard →
-                </Button>
+                <div className="p-6">
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">{hotel.name}</h3>
+                  <div className="flex items-start gap-2 text-sm text-gray-600 mb-2">
+                    <MapPin className="size-4 shrink-0 mt-0.5" />
+                    <span>{hotel.address}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
+                    <Phone className="size-4 shrink-0" />
+                    <span>{hotel.telephone}</span>
+                  </div>
+                  {hotel.description && (
+                    <p className="text-sm text-gray-600 mb-4 line-clamp-2">{hotel.description}</p>
+                  )}
+                  {hotel.amenities && hotel.amenities.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {hotel.amenities.slice(0, 3).map((amenity, i) => (
+                        <span key={i} className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded">
+                          {amenity}
+                        </span>
+                      ))}
+                      {hotel.amenities.length > 3 && (
+                        <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
+                          +{hotel.amenities.length - 3} more
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  <Button 
+                    onClick={() => router.push(`/owner/dashboard/${hotel._id}`)}
+                    className="w-full"
+                  >
+                    Manage Hotel →
+                  </Button>
+                </div>
               </div>
             ))}
           </div>

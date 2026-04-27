@@ -97,7 +97,7 @@ export default function Navbar() {
           <div className="hidden md:flex items-center gap-2">
             {isAuthenticated ? (
               <>
-                {user?.role !== "hotel_owner" && (
+                {user?.role !== "owner" && (
                   <Button variant="ghost" onClick={() => router.push("/hotels")}>
                     Hotels
                   </Button>
@@ -111,10 +111,15 @@ export default function Navbar() {
                       Manage Roles
                     </Button>
                   </>
-                ) : user?.role === "hotel_owner" ? (
-                  <Button variant="ghost" onClick={() => router.push("/owner")}>
-                    Owner Dashboard
-                  </Button>
+                ) : user?.role === "owner" ? (
+                  <>
+                    <Button variant="ghost" onClick={() => router.push("/owner")}>
+                      Hotels
+                    </Button>
+                    <Button variant="ghost" onClick={() => router.push("/owner/hotels")}>
+                      Hotel Settings
+                    </Button>
+                  </>
                 ) : (
                   <Button variant="ghost" onClick={() => router.push("/bookings")}>
                     My Bookings
@@ -136,7 +141,7 @@ export default function Navbar() {
                       <div className="flex flex-col space-y-1">
                         <p className="text-sm font-medium leading-none">{user?.name || "User"}</p>
                         <p className="text-xs leading-none text-gray-500">
-                          {user?.role === "admin" ? "Administrator" : user?.role === "hotel_owner" ? "Hotel Owner" : "User"}
+                          {user?.role === "admin" ? "Administrator" : user?.role === "owner" ? "Hotel Owner" : "User"}
                         </p>
                       </div>
                     </DropdownMenuLabel>
@@ -183,7 +188,7 @@ export default function Navbar() {
                       <div className="flex flex-col space-y-1">
                         <p className="text-sm font-medium leading-none">{user?.name || "User"}</p>
                         <p className="text-xs leading-none text-gray-500">
-                          {user?.role === "admin" ? "Administrator" : user?.role === "hotel_owner" ? "Hotel Owner" : "User"}
+                          {user?.role === "admin" ? "Administrator" : user?.role === "owner" ? "Hotel Owner" : "User"}
                         </p>
                       </div>
                     </DropdownMenuLabel>
@@ -208,7 +213,7 @@ export default function Navbar() {
                   </SheetTrigger>
                   <SheetContent side="right" className="w-64">
                     <div className="flex flex-col gap-4 mt-8">
-                      {user?.role !== "hotel_owner" && (
+                      {user?.role !== "owner" && (
                         <Button
                           variant="ghost"
                           className="justify-start"
@@ -220,7 +225,7 @@ export default function Navbar() {
                           Hotels
                         </Button>
                       )}
-                      {user?.role !== "hotel_owner" && (
+                      {user?.role !== "owner" && (
                         <Button
                           variant="ghost"
                           className="justify-start"
@@ -256,17 +261,29 @@ export default function Navbar() {
                           </Button>
                         </>
                       )}
-                      {user?.role === "hotel_owner" && (
-                        <Button
-                          variant="ghost"
-                          className="justify-start"
-                          onClick={() => {
-                            router.push("/owner");
-                            setMobileMenuOpen(false);
-                          }}
-                        >
-                          Owner Dashboard
-                        </Button>
+                      {user?.role === "owner" && (
+                        <>
+                          <Button
+                            variant="ghost"
+                            className="justify-start"
+                            onClick={() => {
+                              router.push("/owner");
+                              setMobileMenuOpen(false);
+                            }}
+                          >
+                            My Hotels
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            className="justify-start"
+                            onClick={() => {
+                              router.push("/owner/hotels");
+                              setMobileMenuOpen(false);
+                            }}
+                          >
+                            Hotel Settings
+                          </Button>
+                        </>
                       )}
                     </div>
                   </SheetContent>

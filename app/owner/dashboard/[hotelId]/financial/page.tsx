@@ -70,7 +70,7 @@ export default function OwnerFinancial() {
     const token = localStorage.getItem("token");
     if (!token) { router.replace("/login"); return; }
     const decoded = decodeToken(token);
-    if (!decoded || decoded.role !== "hotel_owner") { router.replace("/hotels"); return; }
+    if (!decoded || decoded.role !== "owner") { router.replace("/hotels"); return; }
 
     const fetchHotel = async () => {
       try {

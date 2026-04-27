@@ -118,7 +118,7 @@ export default function OwnerDashboard() {
     const token = localStorage.getItem("token");
     if (!token) { router.replace("/login"); return; }
     const decoded = decodeToken(token);
-    if (!decoded || decoded.role !== "hotel_owner") { router.replace("/hotels"); return; }
+    if (!decoded || decoded.role !== "owner") { router.replace("/hotels"); return; }
 
     const headers = { Authorization: `Bearer ${token}` };
     const base = process.env.NEXT_PUBLIC_API_URL;
