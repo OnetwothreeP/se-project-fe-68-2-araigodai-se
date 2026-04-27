@@ -19,11 +19,20 @@ interface User {
   role: "user" | "owner" | "admin";
 }
 
+interface Toast { id: number; msg: string; type: "success" | "error" }
+
 export default function ManageRolesPage() {
   const router = useRouter();
   const [users,     setUsers]     = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error,     setError]     = useState("");
+  const [toasts,    setToasts]    = useState<Toast[]>([]);
+
+  const addToast = (msg: string, type: Toast["type"] = "success") => {
+    const id = Date.now();
+    setToasts((t) => [...t, { id, msg, type }]);
+    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 3500);
+  };
 
   const [pendingChange, setPendingChange] = useState<{
     userId: string;
@@ -69,6 +78,8 @@ export default function ManageRolesPage() {
           u._id === pendingChange.userId ? { ...u, role: pendingChange.newRole } : u
         )
       );
+      const isAssign = pendingChange.newRole === "owner";
+      addToast(isAssign ? "Role assigned successfully." : "Role revoked successfully.");
       setPendingChange(null);
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed to update role");
@@ -257,6 +268,20 @@ export default function ManageRolesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Toast notifications */}
+      <div className="fixed bottom-6 right-6 z-[999] flex flex-col gap-2">
+        {toasts.map((t) => (
+          <div
+            key={t.id}
+            className={`px-4 py-3 rounded-xl text-sm text-white shadow-lg max-w-xs animate-in slide-in-from-bottom-2 duration-200 ${
+              t.type === "success" ? "bg-green-600" : "bg-red-600"
+            }`}
+          >
+            {t.msg}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

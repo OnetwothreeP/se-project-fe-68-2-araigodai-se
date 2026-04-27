@@ -42,12 +42,21 @@ interface FormErrors {
   telephone?: string;
 }
 
+interface Toast { id: number; msg: string; type: "success" | "error" }
+
 export default function AdminHotels() {
   const router = useRouter();
   const [hotels,    setHotels]    = useState<Hotel[]>([]);
   const [owners,    setOwners]    = useState<Owner[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error,     setError]     = useState<string>("");
+  const [toasts,    setToasts]    = useState<Toast[]>([]);
+
+  const addToast = (msg: string, type: Toast["type"] = "success") => {
+    const id = Date.now();
+    setToasts((t) => [...t, { id, msg, type }]);
+    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 3500);
+  };
 
   const [editingHotel, setEditingHotel] = useState<Hotel | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -152,6 +161,7 @@ export default function AdminHotels() {
           body: JSON.stringify(payload),
         });
         setHotels((prev) => [...prev, result.data]);
+        addToast("Hotel created successfully.");
       } else if (editingHotel) {
         const result = await apiRequest(`/hotels/${editingHotel._id}`, {
           method: "PUT",
@@ -160,6 +170,7 @@ export default function AdminHotels() {
         setHotels((prev) =>
           prev.map((h) => (h._id === editingHotel._id ? result.data : h))
         );
+        addToast("Hotel updated successfully.");
       }
       setIsDialogOpen(false);
     } catch (err) {
