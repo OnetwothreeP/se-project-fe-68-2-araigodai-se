@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Edit, Hotel as HotelIcon, MapPin, Phone, Plus, Trash2, UserCheck } from "lucide-react";
+import { ArrowLeft, Edit, Hotel as HotelIcon, MapPin, Phone, Plus, Trash2, UserCheck, BedDouble, X } from "lucide-react";
 import { apiRequest } from "@/lib/api";
 
 interface Hotel {
@@ -19,6 +19,14 @@ interface Hotel {
   address: string;
   telephone: string;
   ownerId?: string;
+  roomTypes?: RoomTypeDef[];
+}
+
+interface RoomTypeDef {
+  id: "standard" | "deluxe" | "suite";
+  name: string;
+  pricePerNight: number;
+  totalRooms: number;
 }
 
 interface Owner {
@@ -47,6 +55,14 @@ export default function AdminHotels() {
 
   const [formData,   setFormData]   = useState({ name: "", address: "", telephone: "", ownerId: "" });
   const [formErrors, setFormErrors] = useState<FormErrors>({});
+
+  // Room types state
+  const DEFAULT_ROOM_TYPES: RoomTypeDef[] = [
+    { id: "standard", name: "Standard Room", pricePerNight: 1200, totalRooms: 10 },
+    { id: "deluxe",   name: "Deluxe Room",   pricePerNight: 2500, totalRooms: 8  },
+    { id: "suite",    name: "Suite Room",    pricePerNight: 5000, totalRooms: 4  },
+  ];
+  const [roomTypes, setRoomTypes] = useState<RoomTypeDef[]>(DEFAULT_ROOM_TYPES);
 
   useEffect(() => {
     fetchAllHotels();
@@ -90,6 +106,7 @@ export default function AdminHotels() {
     setEditingHotel(null);
     setFormData({ name: "", address: "", telephone: "", ownerId: "" });
     setFormErrors({});
+    setRoomTypes(DEFAULT_ROOM_TYPES);
     setIsDialogOpen(true);
   }
 
@@ -103,6 +120,7 @@ export default function AdminHotels() {
       ownerId:   hotel.ownerId ?? "",
     });
     setFormErrors({});
+    setRoomTypes(hotel.roomTypes && hotel.roomTypes.length > 0 ? hotel.roomTypes : DEFAULT_ROOM_TYPES);
     setIsDialogOpen(true);
   }
 
@@ -124,6 +142,7 @@ export default function AdminHotels() {
         address:   formData.address,
         telephone: formData.telephone,
         ...(formData.ownerId ? { ownerId: formData.ownerId } : {}),
+        roomTypes,
       };
 
       if (isCreating) {
@@ -293,7 +312,7 @@ export default function AdminHotels() {
 
         {/* Create / Edit Dialog (US3-5) */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent>
+          <DialogContent className="max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{isCreating ? "Add New Hotel" : "Edit Hotel"}</DialogTitle>
               <DialogDescription>
@@ -365,6 +384,54 @@ export default function AdminHotels() {
                     </SelectContent>
                   </Select>
                 )}
+              </div>
+
+              {/* Room Types */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <BedDouble className="size-4 text-blue-600" />
+                  <Label>Room Types & Pricing</Label>
+                </div>
+                <div className="space-y-3">
+                  {roomTypes.map((rt, idx) => (
+                    <div key={rt.id} className="bg-gray-50 border border-gray-200 rounded-lg p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-gray-700">{rt.name}</span>
+                        <Badge variant="outline" className="text-xs font-mono">{rt.id}</Badge>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1">
+                          <Label className="text-xs text-gray-500">Price / Night (฿)</Label>
+                          <Input
+                            type="number"
+                            min={0}
+                            value={rt.pricePerNight}
+                            onChange={(e) => {
+                              const updated = [...roomTypes];
+                              updated[idx] = { ...updated[idx], pricePerNight: Number(e.target.value) };
+                              setRoomTypes(updated);
+                            }}
+                            className="h-8 text-sm"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs text-gray-500">Total Rooms</Label>
+                          <Input
+                            type="number"
+                            min={1}
+                            value={rt.totalRooms}
+                            onChange={(e) => {
+                              const updated = [...roomTypes];
+                              updated[idx] = { ...updated[idx], totalRooms: Number(e.target.value) };
+                              setRoomTypes(updated);
+                            }}
+                            className="h-8 text-sm"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
             <DialogFooter>

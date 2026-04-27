@@ -16,6 +16,12 @@ interface HotelStat {
   totalRevenue: number;
   pendingBookings: number;
   monthlyBookings: number[]; // 12-element array indexed Jan–Dec
+  roomTypeOccupancy: {
+    type: string;
+    label: string;
+    count: number;
+    rate: number; // percentage of total bookings
+  }[];
 }
 
 // Shape of platform-wide stats from backend
@@ -92,8 +98,27 @@ function aggregate(stats: HotelStat[]): Omit<HotelStat, "_id" | "name"> {
       totalRevenue:    acc.totalRevenue   + h.totalRevenue,
       pendingBookings: acc.pendingBookings + h.pendingBookings,
       monthlyBookings: acc.monthlyBookings.map((v, i) => v + (h.monthlyBookings[i] ?? 0)),
+      roomTypeOccupancy: acc.roomTypeOccupancy.map((r, i) => ({
+        ...r,
+        count: r.count + (h.roomTypeOccupancy?.[i]?.count ?? 0),
+      })).map((r) => ({
+        ...r,
+        rate: acc.totalBookings + h.totalBookings > 0
+          ? Math.round((r.count / (acc.totalBookings + h.totalBookings)) * 100)
+          : 0,
+      })),
     }),
-    { totalBookings: 0, totalRevenue: 0, pendingBookings: 0, monthlyBookings: Array<number>(12).fill(0) }
+    {
+      totalBookings: 0,
+      totalRevenue: 0,
+      pendingBookings: 0,
+      monthlyBookings: Array<number>(12).fill(0),
+      roomTypeOccupancy: [
+        { type: "standard", label: "Standard Room", count: 0, rate: 0 },
+        { type: "deluxe",   label: "Deluxe Room",   count: 0, rate: 0 },
+        { type: "suite",    label: "Suite Room",    count: 0, rate: 0 },
+      ],
+    }
   );
 }
 
@@ -270,9 +295,47 @@ export default function AdminStats() {
           </Card>
         </div>
 
-        {/* Chart */}
+        {/* Room Type Occupancy */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-3 pb-2">
+          <CardHeader className="pb-2">
+            <p className="font-semibold text-gray-800">Room Type Occupancy</p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {isLoading ? (
+              <div className="space-y-3">
+                {[...Array(3)].map((_, i) => <div key={i} className="h-8 bg-gray-100 rounded animate-pulse" />)}
+              </div>
+            ) : current.roomTypeOccupancy && current.roomTypeOccupancy.length > 0 && current.totalBookings > 0 ? (
+              current.roomTypeOccupancy.map((r) => {
+                const color = r.type === "standard" ? "bg-blue-500" : r.type === "deluxe" ? "bg-indigo-500" : "bg-purple-500";
+                const textColor = r.type === "standard" ? "text-blue-600" : r.type === "deluxe" ? "text-indigo-600" : "text-purple-600";
+                return (
+                  <div key={r.type} className="space-y-1.5">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="font-medium text-gray-700">{r.label}</span>
+                      <span className={`font-semibold ${textColor}`}>{r.count} bookings ({r.rate}%)</span>
+                    </div>
+                    <div className="w-full bg-gray-100 rounded-full h-2.5">
+                      <div
+                        className={`${color} h-2.5 rounded-full transition-all duration-500`}
+                        style={{ width: `${r.rate}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <p className="text-sm text-gray-400 text-center py-4">
+                {current.totalBookings === 0
+                  ? "No bookings yet — occupancy data will appear once bookings are made."
+                  : "No room type data — bookings were made before room types were tracked."}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Chart */}
+        <Card>          <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-3 pb-2">
             <p className="font-semibold text-gray-800">Monthly Booking Trend</p>
             <Select
               value={String(selectedMonth)}

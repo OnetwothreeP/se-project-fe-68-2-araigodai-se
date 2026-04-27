@@ -26,63 +26,43 @@ interface HotelData {
   name: string;
   address: string;
   telephone: string;
+  roomTypes?: {
+    id: string;
+    name: string;
+    pricePerNight: number;
+    totalRooms: number;
+  }[];
 }
 
 interface RoomType {
   id: string;
   name: string;
   pricePerNight: number;
+  totalRooms: number;
   imageUrl: string;
   amenities: string[];
 }
 
-// Static room types — replace with API data when backend supports it
-const ROOM_TYPES: RoomType[] = [
-  {
-    id: "standard",
-    name: "Standard Room",
-    pricePerNight: 1200,
+// Fallback static room types used when hotel has no roomTypes defined
+const ROOM_TYPE_DEFAULTS: Record<string, { imageUrl: string; amenities: string[] }> = {
+  standard: {
     imageUrl: "https://picsum.photos/seed/room-standard/600/400",
-    amenities: [
-      "Single Bed",
-      "Private Bathroom",
-      "32\" TV",
-      "Free Wi-Fi",
-      "Air Conditioning",
-    ],
+    amenities: ["Single Bed", "Private Bathroom", "32\" TV", "Free Wi-Fi", "Air Conditioning"],
   },
-  {
-    id: "deluxe",
-    name: "Deluxe Room",
-    pricePerNight: 2500,
+  deluxe: {
     imageUrl: "https://picsum.photos/seed/room-deluxe/600/400",
-    amenities: [
-      "Queen Size Bed",
-      "Private Bathroom",
-      "43\" TV",
-      "Free Wi-Fi",
-      "Air Conditioning",
-      "City View",
-      "Minibar & Refrigerator",
-    ],
+    amenities: ["Queen Size Bed", "Private Bathroom", "43\" TV", "Free Wi-Fi", "Air Conditioning", "City View", "Minibar & Refrigerator"],
   },
-  {
-    id: "suite",
-    name: "Suite Room",
-    pricePerNight: 5000,
+  suite: {
     imageUrl: "https://picsum.photos/seed/room-suite/600/400",
-    amenities: [
-      "King Size Bed",
-      "Private Bathroom + Bathtub",
-      "55\" TV",
-      "Free Wi-Fi",
-      "Air Conditioning",
-      "Panoramic View",
-      "Separate Living Room",
-      "Minibar & Refrigerator",
-      "Free Breakfast for 2",
-    ],
+    amenities: ["King Size Bed", "Private Bathroom + Bathtub", "55\" TV", "Free Wi-Fi", "Air Conditioning", "Panoramic View", "Separate Living Room", "Minibar & Refrigerator", "Free Breakfast for 2"],
   },
+};
+
+const FALLBACK_ROOM_TYPES: RoomType[] = [
+  { id: "standard", name: "Standard Room", pricePerNight: 1200, totalRooms: 10, ...ROOM_TYPE_DEFAULTS.standard },
+  { id: "deluxe",   name: "Deluxe Room",   pricePerNight: 2500, totalRooms: 8,  ...ROOM_TYPE_DEFAULTS.deluxe  },
+  { id: "suite",    name: "Suite Room",    pricePerNight: 5000, totalRooms: 4,  ...ROOM_TYPE_DEFAULTS.suite   },
 ];
 
 export default function BookHotel() {
@@ -93,6 +73,7 @@ export default function BookHotel() {
   const [error, setError] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [hotel, setHotel] = useState<HotelData | null>(null);
+  const [roomTypes, setRoomTypes] = useState<RoomType[]>(FALLBACK_ROOM_TYPES);
   const [checkInDate, setCheckInDate] = useState<Date>();
   const [numberOfNights, setNumberOfNights] = useState<string>("1");
   const [selectedRoom, setSelectedRoom] = useState<RoomType | null>(null);
@@ -107,7 +88,19 @@ export default function BookHotel() {
   const fetchHotelDetails = async () => {
     try {
       const data = await apiRequest(`/hotels/${hotelId}`);
-      setHotel(data.data);
+      const h: HotelData = data.data;
+      setHotel(h);
+      // Build room types from hotel data, merging with static images/amenities
+      if (h.roomTypes && h.roomTypes.length > 0) {
+        const merged: RoomType[] = h.roomTypes.map((rt) => ({
+          ...rt,
+          imageUrl: ROOM_TYPE_DEFAULTS[rt.id]?.imageUrl ?? `https://picsum.photos/seed/room-${rt.id}/600/400`,
+          amenities: ROOM_TYPE_DEFAULTS[rt.id]?.amenities ?? [],
+        }));
+        setRoomTypes(merged);
+      } else {
+        setRoomTypes(FALLBACK_ROOM_TYPES);
+      }
     } catch {
       setError("Failed to load hotel details");
     }
@@ -190,7 +183,7 @@ export default function BookHotel() {
         <div>
           <h2 className="text-xl font-semibold mb-4">Select Room Type</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {ROOM_TYPES.map((room) => {
+            {roomTypes.map((room) => {
               const isSelected = selectedRoom?.id === room.id;
               return (
                 <Card
