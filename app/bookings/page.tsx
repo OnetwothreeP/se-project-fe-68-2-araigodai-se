@@ -64,10 +64,11 @@ export default function MyBookings() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Cancel flow (US2-4)
+  // Cancel flow (US2-4) — submit cancel request for admin approval
   const [cancelTarget, setCancelTarget]   = useState<Booking | null>(null);
   const [cancelStep, setCancelStep]       = useState<"idle" | "confirm">("idle");
   const [isCancelling, setIsCancelling]   = useState(false);
+  const [cancelRequested, setCancelRequested] = useState(false);
 
   useEffect(() => { fetchBookings(); }, []);
 
@@ -93,17 +94,20 @@ export default function MyBookings() {
     if (!cancelTarget) return;
     setIsCancelling(true);
     try {
-      await apiRequest(`/bookings/${cancelTarget._id}/cancel`, {
+      // Submit cancel request for admin approval instead of cancelling directly
+      await apiRequest(`/bookings/${cancelTarget._id}/request`, {
         method: "POST",
-        body: JSON.stringify({}),
+        body: JSON.stringify({ type: "delete" }),
       });
+      // Mark booking as pending locally while awaiting admin review
       setBookings((prev) =>
-        prev.map((b) => b._id === cancelTarget._id ? { ...b, status: "cancelled" } : b)
+        prev.map((b) => b._id === cancelTarget._id ? { ...b, status: "pending" } : b)
       );
       setCancelStep("idle");
+      setCancelRequested(true);
       setCancelTarget(null);
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to cancel booking");
+      alert(err instanceof Error ? err.message : "Failed to submit cancellation request");
       setCancelStep("idle");
     } finally {
       setIsCancelling(false);
@@ -137,8 +141,8 @@ export default function MyBookings() {
             <Edit className="size-3.5 mr-1" /> Edit
           </Button>
         )}
-        {/* Only show Cancel for paid bookings — unpaid bookings can just be abandoned */}
-        {!isCancelled && isPaid && (
+        {/* Only show Cancel for paid bookings that are confirmed — not pending (already has a request) */}
+        {!isCancelled && isPaid && booking.status === "confirmed" && (
           <Button
             variant="outline"
             size="sm"
@@ -147,6 +151,11 @@ export default function MyBookings() {
           >
             <XCircle className="size-3.5 mr-1" /> Cancel
           </Button>
+        )}
+        {!isCancelled && isPaid && booking.status === "pending" && (
+          <span className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+            Cancel pending review
+          </span>
         )}
       </div>
     );
@@ -316,16 +325,25 @@ export default function MyBookings() {
         )}
       </main>
 
+      {/* Cancel Request Submitted Toast */}
+      {cancelRequested && (
+        <div className="fixed bottom-6 right-6 z-[999] bg-blue-600 text-white px-4 py-3 rounded-xl text-sm shadow-lg max-w-xs">
+          Cancellation request submitted. Awaiting admin approval.
+          <button className="ml-3 underline text-blue-200 text-xs" onClick={() => setCancelRequested(false)}>Dismiss</button>
+        </div>
+      )}
+
       {/* Cancel Confirmation Dialog (US2-4) */}
       <AlertDialog open={cancelStep === "confirm"} onOpenChange={(o) => !o && setCancelStep("idle")}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Cancel Booking</AlertDialogTitle>
+            <AlertDialogTitle>Request Cancellation</AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-3">
                 <p>
-                  Are you sure you want to cancel your booking at{" "}
+                  Submit a cancellation request for your booking at{" "}
                   <span className="font-semibold">{cancelTarget?.hotel.name}</span>?
+                  An admin will review and process it.
                 </p>
 
                 {/* Refund policy warning (US2-4 Scenario 2) */}
@@ -382,7 +400,7 @@ export default function MyBookings() {
               onClick={handleCancelConfirm}
               className="bg-red-600 hover:bg-red-700"
             >
-              {isCancelling ? <><Loader2 className="size-3.5 mr-1 animate-spin" /> Cancelling…</> : "Yes, Cancel"}
+              {isCancelling ? <><Loader2 className="size-3.5 mr-1 animate-spin" /> Submitting…</> : "Submit Request"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
