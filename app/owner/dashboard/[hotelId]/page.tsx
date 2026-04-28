@@ -464,9 +464,16 @@ export default function OwnerDashboard() {
                           }>
                             {b.status}
                           </Badge>
+                          {b.paymentStatus && b.paymentStatus !== "paid" && (
+                            <Badge className="bg-orange-100 text-orange-700 border-0 text-xs">
+                              {b.paymentStatus.replace(/_/g, " ")}
+                            </Badge>
+                          )}
                         </div>
                         <div className="text-sm text-gray-500">
                           Check-in: {fmtDate(b.checkInDate)} · {b.numberOfNights} nights
+                          {b.roomType && <span className="ml-2 capitalize text-gray-400">· {b.roomType}</span>}
+                          {b.totalPrice != null && <span className="ml-2 font-medium text-gray-700">· {fmtMoney(b.totalPrice)}</span>}
                         </div>
                       </div>
                       <div className="flex gap-2">
@@ -650,11 +657,11 @@ export default function OwnerDashboard() {
               <input
                 type="number"
                 min="1"
-                max="30"
+                max="3"
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 value={editForm.numberOfNights}
                 onChange={e => { setEditForm(f => ({ ...f, numberOfNights: e.target.value })); setEditConflict(false); }}
-                placeholder="e.g. 3"
+                placeholder="1 – 3"
               />
             </div>
           </div>
