@@ -107,9 +107,14 @@ export default function Navbar() {
                     </Button>
                   </>
                 ) : user?.role === "owner" ? (
-                  <Button variant="ghost" onClick={() => router.push("/owner/hotels")}>
-                    Hotel Settings
-                  </Button>
+                  <>
+                    <Button variant="ghost" onClick={() => router.push("/owner")}>
+                      Dashboard
+                    </Button>
+                    <Button variant="ghost" onClick={() => router.push("/owner/hotels")}>
+                      Edit Hotel
+                    </Button>
+                  </>
                 ) : (
                   <>
                     <Button variant="ghost" onClick={() => router.push("/hotels")}>
@@ -232,16 +237,28 @@ export default function Navbar() {
                           </Button>
                         </>
                       ) : user?.role === "owner" ? (
-                        <Button
-                          variant="ghost"
-                          className="justify-start"
-                          onClick={() => {
-                            router.push("/owner/hotels");
-                            setMobileMenuOpen(false);
-                          }}
-                        >
-                          Hotel Settings
-                        </Button>
+                        <>
+                          <Button
+                            variant="ghost"
+                            className="justify-start"
+                            onClick={() => {
+                              router.push("/owner");
+                              setMobileMenuOpen(false);
+                            }}
+                          >
+                            Dashboard
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            className="justify-start"
+                            onClick={() => {
+                              router.push("/owner/hotels");
+                              setMobileMenuOpen(false);
+                            }}
+                          >
+                            Edit Hotel
+                          </Button>
+                        </>
                       ) : (
                         <>
                           <Button

@@ -78,7 +78,7 @@ export default function OwnerFinancial() {
           `${process.env.NEXT_PUBLIC_API_URL}/hotels/${hotelId}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        if (res.status === 403) { router.replace("/error/403"); return; }
+        if (res.status === 403) { router.replace("/403"); return; }
         if (res.ok) {
           const data = await res.json();
           setHotelName(data.data?.name || data.name || "Hotel");
@@ -105,7 +105,7 @@ export default function OwnerFinancial() {
         `${process.env.NEXT_PUBLIC_API_URL}/hotels/${hotelId}/financial?startDate=${startDate}&endDate=${endDate}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      if (res.status === 403) { router.replace("/error/403"); return; }
+      if (res.status === 403) { router.replace("/403"); return; }
       if (!res.ok) throw new Error((await res.json()).message || "Failed to load report");
 
       const body = await res.json();
@@ -131,7 +131,7 @@ export default function OwnerFinancial() {
         `${process.env.NEXT_PUBLIC_API_URL}/hotels/${hotelId}/financial/export?startDate=${startDate}&endDate=${endDate}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      if (res.status === 403) { router.replace("/error/403"); return; }
+      if (res.status === 403) { router.replace("/403"); return; }
       if (!res.ok) throw new Error("Export failed");
 
       const blob = await res.blob();

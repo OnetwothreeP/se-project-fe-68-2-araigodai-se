@@ -2,23 +2,39 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Save, BedDouble } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
 /* ─── Types ─── */
 interface JwtPayload { role: string; }
+
+interface RoomTypeDef {
+  id: "standard" | "deluxe" | "suite";
+  name: string;
+  pricePerNight: number;
+  totalRooms: number;
+  amenities: string[];
+}
 
 interface HotelForm {
   name: string;
   address: string;
   telephone: string;
-  description: string;
-  amenities: string[];
 }
 
 interface Toast { id: number; msg: string; type: "success" | "error" | "default" }
 
-const ALL_AMENITIES = ["WiFi", "Pool", "Gym", "Parking"];
+const DEFAULT_ROOM_TYPES: RoomTypeDef[] = [
+  { id: "standard", name: "Standard Room", pricePerNight: 1200, totalRooms: 10,
+    amenities: ["Single Bed", "Private Bathroom", "32\" TV", "Free Wi-Fi", "Air Conditioning"] },
+  { id: "deluxe",   name: "Deluxe Room",   pricePerNight: 2500, totalRooms: 8,
+    amenities: ["Queen Size Bed", "Private Bathroom", "43\" TV", "Free Wi-Fi", "Air Conditioning", "City View", "Minibar"] },
+  { id: "suite",    name: "Suite Room",    pricePerNight: 5000, totalRooms: 4,
+    amenities: ["King Size Bed", "Private Bathroom + Bathtub", "55\" TV", "Free Wi-Fi", "Air Conditioning", "Panoramic View", "Living Room", "Free Breakfast for 2"] },
+];
 
 /* ─── Helpers ─── */
 function decodeToken(token: string): JwtPayload | null {
@@ -32,13 +48,12 @@ export default function OwnerEditHotel() {
   const hotelId = params.hotelId as string;
 
   const [hotelName, setHotelName] = useState("");
-  const [form, setForm] = useState<HotelForm>({
-    name: "", address: "", telephone: "", description: "", amenities: [],
-  });
-  const [isLoading, setIsLoading]   = useState(true);
-  const [isSaving, setIsSaving]     = useState(false);
-  const [fieldError, setFieldError] = useState("");
-  const [toasts, setToasts]         = useState<Toast[]>([]);
+  const [form, setForm] = useState<HotelForm>({ name: "", address: "", telephone: "" });
+  const [formErrors, setFormErrors] = useState<Partial<HotelForm>>({});
+  const [roomTypes, setRoomTypes] = useState<RoomTypeDef[]>(DEFAULT_ROOM_TYPES);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving,  setIsSaving]  = useState(false);
+  const [toasts,    setToasts]    = useState<Toast[]>([]);
 
   const addToast = useCallback((msg: string, type: Toast["type"] = "default") => {
     const id = Date.now();
@@ -51,7 +66,7 @@ export default function OwnerEditHotel() {
     const token = localStorage.getItem("token");
     if (!token) { router.replace("/login"); return; }
     const decoded = decodeToken(token);
-    if (!decoded || decoded.role !== "owner") { router.replace("/owner/hotels"); return; }
+    if (!decoded || decoded.role !== "owner") { router.replace("/owner"); return; }
 
     const fetchHotel = async () => {
       try {
@@ -59,19 +74,14 @@ export default function OwnerEditHotel() {
           `${process.env.NEXT_PUBLIC_API_URL}/hotels/${hotelId}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        if (res.status === 403) { router.replace("/error/403"); return; }
+        if (res.status === 403) { router.replace("/403"); return; }
         if (!res.ok) throw new Error((await res.json()).message || "Failed to load hotel");
 
         const body = await res.json();
         const h = body.data || body;
         setHotelName(h.name || "");
-        setForm({
-          name:        h.name        || "",
-          address:     h.address     || "",
-          telephone:   h.telephone   || "",
-          description: h.description || "",
-          amenities:   Array.isArray(h.amenities) ? h.amenities : [],
-        });
+        setForm({ name: h.name || "", address: h.address || "", telephone: h.telephone || "" });
+        setRoomTypes(h.roomTypes && h.roomTypes.length > 0 ? h.roomTypes : DEFAULT_ROOM_TYPES);
       } catch (err) {
         addToast(err instanceof Error ? err.message : "Failed to load hotel.", "error");
       } finally {
@@ -82,23 +92,19 @@ export default function OwnerEditHotel() {
     fetchHotel();
   }, [router, hotelId, addToast]);
 
-  /* ── Amenity toggle ── */
-  function toggleAmenity(a: string) {
-    setForm(f => ({
-      ...f,
-      amenities: f.amenities.includes(a)
-        ? f.amenities.filter(x => x !== a)
-        : [...f.amenities, a],
-    }));
+  /* ── Validate ── */
+  function validate(): boolean {
+    const errors: Partial<HotelForm> = {};
+    if (!form.name.trim())      errors.name      = "Hotel name is required";
+    if (!form.address.trim())   errors.address   = "Address is required";
+    if (!form.telephone.trim()) errors.telephone = "Telephone is required";
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
   }
 
   /* ── Save ── */
   async function handleSave() {
-    if (!form.name.trim() || !form.address.trim() || !form.telephone.trim()) {
-      setFieldError("Please fill in all required fields.");
-      return;
-    }
-    setFieldError("");
+    if (!validate()) return;
 
     const token = localStorage.getItem("token")!;
     setIsSaving(true);
@@ -107,20 +113,16 @@ export default function OwnerEditHotel() {
         `${process.env.NEXT_PUBLIC_API_URL}/hotels/${hotelId}`,
         {
           method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           body: JSON.stringify({
-            name:        form.name.trim(),
-            address:     form.address.trim(),
-            telephone:   form.telephone.trim(),
-            description: form.description.trim(),
-            amenities:   form.amenities,
+            name:      form.name.trim(),
+            address:   form.address.trim(),
+            telephone: form.telephone.trim(),
+            roomTypes,
           }),
         }
       );
-      if (res.status === 403) { router.replace("/error/403"); return; }
+      if (res.status === 403) { router.replace("/403"); return; }
       if (!res.ok) throw new Error((await res.json()).message || "Save failed");
 
       setHotelName(form.name.trim());
@@ -130,6 +132,15 @@ export default function OwnerEditHotel() {
     } finally {
       setIsSaving(false);
     }
+  }
+
+  /* ── Update room type field ── */
+  function updateRoom(idx: number, field: keyof RoomTypeDef, value: string | number | string[]) {
+    setRoomTypes(prev => {
+      const updated = [...prev];
+      updated[idx] = { ...updated[idx], [field]: value };
+      return updated;
+    });
   }
 
   /* ─── Render ─── */
@@ -157,117 +168,130 @@ export default function OwnerEditHotel() {
           </div>
         </div>
 
-        {/* Form card */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm px-8 py-7">
+        {isLoading ? (
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm px-8 py-7 space-y-5 animate-pulse">
+            {[...Array(5)].map((_, i) => (
+              <div key={i}>
+                <div className="h-4 bg-gray-200 rounded w-1/4 mb-2" />
+                <div className="h-10 bg-gray-100 rounded" />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <>
+            {/* ── Basic Info ── */}
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm px-8 py-7 mb-4">
+              <h2 className="text-sm font-semibold text-gray-700 mb-5">Basic Information</h2>
 
-          {isLoading ? (
-            <div className="space-y-5 animate-pulse">
-              {[...Array(4)].map((_, i) => (
-                <div key={i}>
-                  <div className="h-4 bg-gray-200 rounded w-1/4 mb-2" />
-                  <div className="h-10 bg-gray-100 rounded" />
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="name">Hotel Name <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="name"
+                    className={`mt-1.5 ${formErrors.name ? "border-red-400" : ""}`}
+                    value={form.name}
+                    onChange={e => { setForm(f => ({ ...f, name: e.target.value })); setFormErrors(f => ({ ...f, name: undefined })); }}
+                    placeholder="e.g. Grand Plaza Hotel"
+                  />
+                  {formErrors.name && <p className="text-xs text-red-500 mt-1">{formErrors.name}</p>}
                 </div>
-              ))}
+
+                <div>
+                  <Label htmlFor="address">Address <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="address"
+                    className={`mt-1.5 ${formErrors.address ? "border-red-400" : ""}`}
+                    value={form.address}
+                    onChange={e => { setForm(f => ({ ...f, address: e.target.value })); setFormErrors(f => ({ ...f, address: undefined })); }}
+                    placeholder="e.g. 123 Sukhumvit Rd, Bangkok"
+                  />
+                  {formErrors.address && <p className="text-xs text-red-500 mt-1">{formErrors.address}</p>}
+                </div>
+
+                <div>
+                  <Label htmlFor="telephone">Telephone <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="telephone"
+                    className={`mt-1.5 ${formErrors.telephone ? "border-red-400" : ""}`}
+                    value={form.telephone}
+                    onChange={e => { setForm(f => ({ ...f, telephone: e.target.value })); setFormErrors(f => ({ ...f, telephone: undefined })); }}
+                    placeholder="e.g. 02-555-1234"
+                  />
+                  {formErrors.telephone && <p className="text-xs text-red-500 mt-1">{formErrors.telephone}</p>}
+                </div>
+              </div>
             </div>
-          ) : (
-            <>
-              {/* Validation error */}
-              {fieldError && (
-                <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm mb-5">
-                  {fieldError}
-                </div>
-              )}
 
-              {/* Hotel Name */}
-              <div className="mb-5">
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Hotel Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
-                  value={form.name}
-                  onChange={e => { setForm(f => ({ ...f, name: e.target.value })); setFieldError(""); }}
-                  placeholder="e.g. Grand Plaza Hotel"
-                />
+            {/* ── Room Types ── */}
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm px-8 py-7 mb-6">
+              <div className="flex items-center gap-2 mb-5">
+                <BedDouble className="size-4 text-blue-600" />
+                <h2 className="text-sm font-semibold text-gray-700">Room Types & Pricing</h2>
               </div>
 
-              {/* Address */}
-              <div className="mb-5">
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Address <span className="text-red-500">*</span>
-                </label>
-                <input
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
-                  value={form.address}
-                  onChange={e => { setForm(f => ({ ...f, address: e.target.value })); setFieldError(""); }}
-                  placeholder="e.g. 123 Sukhumvit Rd, Bangkok"
-                />
-              </div>
+              <div className="space-y-4">
+                {roomTypes.map((rt, idx) => (
+                  <div key={rt.id} className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-700">{rt.name}</span>
+                      <Badge variant="outline" className="text-xs font-mono">{rt.id}</Badge>
+                    </div>
 
-              {/* Telephone */}
-              <div className="mb-5">
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Telephone <span className="text-red-500">*</span>
-                </label>
-                <input
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
-                  value={form.telephone}
-                  onChange={e => { setForm(f => ({ ...f, telephone: e.target.value })); setFieldError(""); }}
-                  placeholder="e.g. 02-555-1234"
-                />
-              </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-xs text-gray-500">Price / Night (฿)</Label>
+                        <Input
+                          type="number"
+                          min={0}
+                          value={rt.pricePerNight}
+                          onChange={e => updateRoom(idx, "pricePerNight", Number(e.target.value))}
+                          className="h-8 text-sm mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs text-gray-500">Total Rooms</Label>
+                        <Input
+                          type="number"
+                          min={1}
+                          value={rt.totalRooms}
+                          onChange={e => updateRoom(idx, "totalRooms", Number(e.target.value))}
+                          className="h-8 text-sm mt-1"
+                        />
+                      </div>
+                    </div>
 
-              {/* Description */}
-              <div className="mb-5">
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Description
-                </label>
-                <textarea
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
-                  rows={3}
-                  value={form.description}
-                  onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                  placeholder="Describe your hotel..."
-                />
-              </div>
-
-              {/* Amenities */}
-              <div className="mb-7">
-                <label className="block text-sm font-medium text-gray-700 mb-2.5">
-                  Amenities
-                </label>
-                <div className="flex flex-wrap gap-4">
-                  {ALL_AMENITIES.map(a => (
-                    <label key={a} className="flex items-center gap-2 text-sm cursor-pointer select-none">
-                      <input
-                        type="checkbox"
-                        className="w-4 h-4 cursor-pointer accent-blue-600"
-                        checked={form.amenities.includes(a)}
-                        onChange={() => toggleAmenity(a)}
+                    <div>
+                      <Label className="text-xs text-gray-500">Amenities (comma-separated)</Label>
+                      <Input
+                        value={rt.amenities?.join(", ") ?? ""}
+                        onChange={e => updateRoom(idx, "amenities",
+                          e.target.value.split(",").map(s => s.trim()).filter(Boolean)
+                        )}
+                        placeholder="Free Wi-Fi, Air Conditioning, TV"
+                        className="h-8 text-sm mt-1"
                       />
-                      {a}
-                    </label>
-                  ))}
-                </div>
+                    </div>
+                  </div>
+                ))}
               </div>
+            </div>
 
-              {/* Actions */}
-              <div className="flex justify-end gap-2.5">
-                <Button
-                  variant="outline"
-                  onClick={() => router.push(`/owner/dashboard/${hotelId}`)}
-                  disabled={isSaving}
-                >
-                  Cancel
-                </Button>
-                <Button onClick={handleSave} disabled={isSaving}>
-                  <Save className="size-4 mr-1.5" />
-                  {isSaving ? "Saving…" : "Save Changes"}
-                </Button>
-              </div>
-            </>
-          )}
-        </div>
+            {/* ── Actions ── */}
+            <div className="flex justify-end gap-2.5">
+              <Button
+                variant="outline"
+                onClick={() => router.push(`/owner/dashboard/${hotelId}`)}
+                disabled={isSaving}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleSave} disabled={isSaving}>
+                <Save className="size-4 mr-1.5" />
+                {isSaving ? "Saving…" : "Save Changes"}
+              </Button>
+            </div>
+          </>
+        )}
       </main>
 
       {/* Toast container */}

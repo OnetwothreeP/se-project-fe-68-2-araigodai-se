@@ -45,7 +45,7 @@ export default function OwnerHotelList() {
 
     const decoded = decodeToken(token);
     if (!decoded || decoded.role !== "owner") {
-      router.replace("/owner/hotels");
+      router.replace("/hotels");
       return;
     }
 
@@ -59,7 +59,7 @@ export default function OwnerHotelList() {
         );
 
         if (res.status === 403) {
-          router.replace("/error/403");
+          router.replace("/403");
           return;
         }
 
@@ -140,9 +140,6 @@ export default function OwnerHotelList() {
                     alt={hotel.name}
                     className="w-full h-full object-cover"
                   />
-                  <div className="absolute top-3 right-3 bg-white px-3 py-1 rounded-full text-sm font-semibold text-blue-600">
-                    {hotel.pricePerNight ? `฿${hotel.pricePerNight.toLocaleString()}/night` : 'Price not set'}
-                  </div>
                 </div>
                 <div className="p-6">
                   <h3 className="text-xl font-bold text-gray-900 mb-2">{hotel.name}</h3>
@@ -154,23 +151,6 @@ export default function OwnerHotelList() {
                     <Phone className="size-4 shrink-0" />
                     <span>{hotel.telephone}</span>
                   </div>
-                  {hotel.description && (
-                    <p className="text-sm text-gray-600 mb-4 line-clamp-2">{hotel.description}</p>
-                  )}
-                  {hotel.amenities && hotel.amenities.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {hotel.amenities.slice(0, 3).map((amenity, i) => (
-                        <span key={i} className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded">
-                          {amenity}
-                        </span>
-                      ))}
-                      {hotel.amenities.length > 3 && (
-                        <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
-                          +{hotel.amenities.length - 3} more
-                        </span>
-                      )}
-                    </div>
-                  )}
                   <Button 
                     onClick={() => router.push(`/owner/dashboard/${hotel._id}`)}
                     className="w-full"

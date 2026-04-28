@@ -279,27 +279,7 @@ export default function OwnerHotelsManagement() {
                       <span>{hotel.telephone}</span>
                     </div>
                   </div>
-                  {hotel.description && (
-                    <p className="text-sm text-gray-600 line-clamp-2">{hotel.description}</p>
-                  )}
-                  {hotel.amenities && hotel.amenities.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {hotel.amenities.slice(0, 3).map((amenity, i) => (
-                        <span
-                          key={i}
-                          className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded"
-                        >
-                          {amenity}
-                        </span>
-                      ))}
-                      {hotel.amenities.length > 3 && (
-                        <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
-                          +{hotel.amenities.length - 3} more
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </CardContent>
+                                </CardContent>
                 <CardFooter className="pt-0 pb-4 px-5">
                   <Button className="w-full" onClick={() => openEditDialog(hotel)}>
                     <Edit className="size-4 mr-2" />
