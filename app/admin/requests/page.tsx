@@ -135,9 +135,11 @@ export default function AdminRequests() {
   }
 
   const filtered =
-    filter === "All" ? requests : requests.filter((r) => r.status === filter.toLowerCase());
+    filter === "All"
+      ? requests.filter((r) => r.type === "delete")
+      : requests.filter((r) => r.type === "delete" && r.status === filter.toLowerCase());
 
-  const pendingCount = requests.filter((r) => r.status === "pending").length;
+  const pendingCount = requests.filter((r) => r.type === "delete" && r.status === "pending").length;
 
   const statusBadge: Record<string, string> = {
     pending:  "bg-yellow-100 text-yellow-800",
@@ -167,7 +169,7 @@ export default function AdminRequests() {
                 <Badge className="bg-blue-600 text-white text-xs">{pendingCount} pending</Badge>
               )}
             </div>
-            <p className="text-sm text-gray-500">Accept or decline user edit / cancel requests</p>
+            <p className="text-sm text-gray-500">Accept or decline user cancellation requests</p>
           </div>
         </div>
 
@@ -199,11 +201,10 @@ export default function AdminRequests() {
               <TableHeader>
                 <TableRow className="bg-gray-50">
                   <TableHead>Booking</TableHead>
-                  <TableHead>Type</TableHead>
                   <TableHead>Guest</TableHead>
                   <TableHead>Hotel</TableHead>
-                  <TableHead>Current Dates</TableHead>
-                  <TableHead>Requested Change</TableHead>
+                  <TableHead>Check-in</TableHead>
+                  <TableHead>Nights</TableHead>
                   <TableHead>Submitted</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Actions</TableHead>
@@ -212,14 +213,14 @@ export default function AdminRequests() {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-12 text-gray-400">
+                    <TableCell colSpan={8} className="text-center py-12 text-gray-400">
                       Loading…
                     </TableCell>
                   </TableRow>
                 ) : filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-12 text-gray-400">
-                      No requests found.
+                    <TableCell colSpan={8} className="text-center py-12 text-gray-400">
+                      No cancellation requests found.
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -236,37 +237,12 @@ export default function AdminRequests() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Badge
-                            className={
-                              r.type === "edit"
-                                ? "bg-blue-100 text-blue-800"
-                                : "bg-red-100 text-red-800"
-                            }
-                          >
-                            {r.type === "edit" ? "Edit" : "Cancel"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
                           <div className="font-medium text-sm">{getName(requester as any)}</div>
                           <div className="text-xs text-gray-400">{getEmail(requester as any)}</div>
                         </TableCell>
                         <TableCell className="text-sm max-w-[140px] truncate">{hotelName}</TableCell>
-                        <TableCell className="text-sm">
-                          {fmt(booking?.checkInDate)}
-                          <br />
-                          <span className="text-gray-400">{booking?.numberOfNights} nights</span>
-                        </TableCell>
-                        <TableCell className="text-sm">
-                          {r.type === "edit" ? (
-                            <>
-                              <span className="font-medium">{fmt(r.newCheckInDate)}</span>
-                              <br />
-                              <span className="text-gray-400">{r.newNumberOfNights} nights</span>
-                            </>
-                          ) : (
-                            <span className="text-red-500">Cancellation</span>
-                          )}
-                        </TableCell>
+                        <TableCell className="text-sm">{fmt(booking?.checkInDate)}</TableCell>
+                        <TableCell className="text-sm">{booking?.numberOfNights}</TableCell>
                         <TableCell className="text-xs text-gray-500">{fmt(r.createdAt)}</TableCell>
                         <TableCell>
                           <Badge className={`${statusBadge[r.status]} capitalize border-0`}>
@@ -321,14 +297,12 @@ export default function AdminRequests() {
               {actionDialog && (
                 <>
                   <span className="font-semibold">{getName(actionDialog.request.requestedBy as any)}</span>{" "}
-                  — {actionDialog.request.type} request.
-                  {actionDialog.request.type === "edit" && actionDialog.request.newCheckInDate && (
-                    <> Requesting change to{" "}
-                      <span className="font-semibold">{fmt(actionDialog.request.newCheckInDate)}</span>{" "}
-                      ({actionDialog.request.newNumberOfNights} nights).
-                    </>
-                  )}
-                  {actionDialog.request.type === "delete" && " Requesting cancellation."}
+                  is requesting cancellation of booking{" "}
+                  <span className="font-mono font-semibold">
+                    #{typeof actionDialog.request.booking === "object"
+                      ? actionDialog.request.booking._id?.slice(-6).toUpperCase()
+                      : "—"}
+                  </span>.
                 </>
               )}
             </DialogDescription>
