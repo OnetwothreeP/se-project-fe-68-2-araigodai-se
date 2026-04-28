@@ -36,6 +36,11 @@ interface Booking {
 interface HotelOption {
   _id: string;
   name: string;
+  roomTypes?: {
+    id: string;
+    name: string;
+    pricePerNight: number;
+  }[];
 }
 
 function shortId(id: string) {
@@ -63,6 +68,7 @@ export default function AdminDashboard() {
   const [isSaving,        setIsSaving]        = useState(false);
   const [isCreating,      setIsCreating]      = useState(false);
   const [selectedHotelId, setSelectedHotelId] = useState<string>("");
+  const [selectedRoomType, setSelectedRoomType] = useState<string>("");
 
   // ── Cancel dialog (US3-2) ──
   const [cancelDialog,     setCancelDialog]     = useState(false);      // step 1 — reason
@@ -93,7 +99,18 @@ export default function AdminDashboard() {
   async function fetchHotels() {
     try {
       const data = await apiRequest("/hotels");
-      setHotels(data.data || []);
+      // Fetch full hotel details including roomTypes
+      const hotelsWithRooms = await Promise.all(
+        (data.data || []).map(async (h: HotelOption) => {
+          try {
+            const detail = await apiRequest(`/hotels/${h._id}`);
+            return detail.data;
+          } catch {
+            return h;
+          }
+        })
+      );
+      setHotels(hotelsWithRooms);
     } catch {
       // non-fatal
     }
@@ -151,6 +168,7 @@ export default function AdminDashboard() {
     setEditReason("");
     setEditReasonErr("");
     setSelectedHotelId("");
+    setSelectedRoomType("");
     setIsDialogOpen(true);
   }
 
@@ -182,6 +200,7 @@ export default function AdminDashboard() {
           body: JSON.stringify({
             checkInDate: format(checkInDate, "yyyy-MM-dd"),
             numberOfNights: Number(numberOfNights),
+            ...(selectedRoomType && selectedRoomType !== "none" ? { roomType: selectedRoomType } : {}),
           }),
         });
         await fetchAllBookings();
@@ -213,6 +232,13 @@ export default function AdminDashboard() {
 
   const upcomingCount = bookings.filter((b) => isAfter(new Date(b.checkInDate), new Date())).length;
   const checkOutDate  = checkInDate ? addDays(checkInDate, Number(numberOfNights)) : null;
+
+  // Compute price preview for create dialog
+  const selectedHotel = hotels.find((h) => h._id === selectedHotelId);
+  const selectedRoom  = selectedHotel?.roomTypes?.find((r) => r.id === selectedRoomType);
+  const previewPrice  = selectedRoom
+    ? selectedRoom.pricePerNight * Number(numberOfNights)
+    : null;
 
   const statusBadge: Record<string, string> = {
     confirmed: "bg-green-100 text-green-800",
@@ -434,7 +460,7 @@ export default function AdminDashboard() {
               {isCreating && (
                 <div className="space-y-2">
                   <Label>Hotel</Label>
-                  <Select value={selectedHotelId} onValueChange={setSelectedHotelId}>
+                  <Select value={selectedHotelId} onValueChange={(v) => { setSelectedHotelId(v); setSelectedRoomType(""); }}>
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Select a hotel" />
                     </SelectTrigger>
@@ -444,6 +470,31 @@ export default function AdminDashboard() {
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+              )}
+
+              {isCreating && selectedHotelId && (
+                <div className="space-y-2">
+                  <Label>Room Type <span className="text-xs text-gray-400">(optional)</span></Label>
+                  {selectedHotel?.roomTypes && selectedHotel.roomTypes.length > 0 ? (
+                    <Select value={selectedRoomType} onValueChange={setSelectedRoomType}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select a room type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">No specific room type</SelectItem>
+                        {selectedHotel.roomTypes.map((rt) => (
+                          <SelectItem key={rt.id} value={rt.id}>
+                            {rt.name} — ฿{rt.pricePerNight.toLocaleString()}/night
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+                      No room types defined — booking will use the hotel&apos;s base price.
+                    </p>
+                  )}
                 </div>
               )}
 
@@ -507,6 +558,12 @@ export default function AdminDashboard() {
                         {numberOfNights} {Number(numberOfNights) === 1 ? "night" : "nights"}
                       </span>
                     </div>
+                    {isCreating && previewPrice !== null && (
+                      <div className="flex justify-between pt-1 border-t border-blue-200 mt-1">
+                        <span className="font-semibold text-gray-700">Total Price</span>
+                        <span className="font-bold text-blue-700">฿{previewPrice.toLocaleString()}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
