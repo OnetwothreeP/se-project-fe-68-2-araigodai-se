@@ -99,13 +99,11 @@ export default function MyBookings() {
         method: "POST",
         body: JSON.stringify({ type: "delete" }),
       });
-      // Mark booking as pending locally while awaiting admin review
-      setBookings((prev) =>
-        prev.map((b) => b._id === cancelTarget._id ? { ...b, status: "pending" } : b)
-      );
       setCancelStep("idle");
       setCancelRequested(true);
       setCancelTarget(null);
+      // Re-fetch to get latest status from DB
+      await fetchBookings();
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed to submit cancellation request");
       setCancelStep("idle");
