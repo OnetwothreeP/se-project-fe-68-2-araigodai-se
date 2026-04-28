@@ -47,15 +47,15 @@ interface RoomType {
 // Fallback static room types used when hotel has no roomTypes defined
 const ROOM_TYPE_DEFAULTS: Record<string, { imageUrl: string; amenities: string[] }> = {
   standard: {
-    imageUrl: "https://picsum.photos/seed/room-standard/600/400",
+    imageUrl: "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=600&auto=format&fit=crop",
     amenities: ["Single Bed", "Private Bathroom", "32\" TV", "Free Wi-Fi", "Air Conditioning"],
   },
   deluxe: {
-    imageUrl: "https://picsum.photos/seed/room-deluxe/600/400",
+    imageUrl: "https://images.unsplash.com/photo-1618773928121-c32242e63f39?w=600&auto=format&fit=crop",
     amenities: ["Queen Size Bed", "Private Bathroom", "43\" TV", "Free Wi-Fi", "Air Conditioning", "City View", "Minibar & Refrigerator"],
   },
   suite: {
-    imageUrl: "https://picsum.photos/seed/room-suite/600/400",
+    imageUrl: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=600&auto=format&fit=crop",
     amenities: ["King Size Bed", "Private Bathroom + Bathtub", "55\" TV", "Free Wi-Fi", "Air Conditioning", "Panoramic View", "Separate Living Room", "Minibar & Refrigerator", "Free Breakfast for 2"],
   },
 };
@@ -119,7 +119,7 @@ export default function BookHotel() {
         const merged: RoomType[] = h.roomTypes.map((rt) => ({
           ...rt,
           // amenities come from API; image is still static per type id
-          imageUrl: ROOM_TYPE_DEFAULTS[rt.id]?.imageUrl ?? `https://picsum.photos/seed/room-${rt.id}/600/400`,
+          imageUrl: ROOM_TYPE_DEFAULTS[rt.id]?.imageUrl ?? `https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=600&auto=format&fit=crop`,
           amenities: rt.amenities && rt.amenities.length > 0
             ? rt.amenities
             : (ROOM_TYPE_DEFAULTS[rt.id]?.amenities ?? []),
