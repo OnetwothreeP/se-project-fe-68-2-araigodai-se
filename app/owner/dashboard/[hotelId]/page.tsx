@@ -158,10 +158,8 @@ export default function OwnerDashboard() {
         setHotelName(d.hotelName || d.hotel?.name || "Hotel");
 
         const allRequests: BookingRequest[] = reqData.data || reqData || [];
-        setRequests(allRequests.filter((r: BookingRequest) => r.status === "pending"));
-        setBookings((bkData.data || bkData || []).filter(
-          (b: HotelBooking) => b.status !== "cancelled"
-        ));
+        setRequests(allRequests.filter((r: BookingRequest) => r.status === "pending" && r.type === "delete"));
+        setBookings((bkData.data || bkData || []));
       } catch (err) {
         setLoadError(err instanceof Error ? err.message : "Failed to load dashboard data.");
       } finally {
@@ -460,6 +458,8 @@ export default function OwnerDashboard() {
                               ? "bg-green-100 text-green-700 border-0"
                               : b.status === "pending"
                               ? "bg-yellow-100 text-yellow-700 border-0"
+                              : b.status === "cancelled"
+                              ? "bg-red-100 text-red-700 border-0"
                               : "bg-gray-100 text-gray-600 border-0"
                           }>
                             {b.status}
@@ -477,29 +477,33 @@ export default function OwnerDashboard() {
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setEditForm({ checkInDate: b.checkInDate.slice(0, 10), numberOfNights: String(b.numberOfNights) });
-                            setEditConflict(false);
-                            setEditDialog(b);
-                          }}
-                        >
-                          Edit Booking
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-red-600 border-red-200 hover:bg-red-50"
-                          onClick={() => {
-                            setCancelReason("");
-                            setCancelReasonErr("");
-                            setCancelDialog(b);
-                          }}
-                        >
-                          Cancel Booking
-                        </Button>
+                        {b.status !== "cancelled" && (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setEditForm({ checkInDate: b.checkInDate.slice(0, 10), numberOfNights: String(b.numberOfNights) });
+                                setEditConflict(false);
+                                setEditDialog(b);
+                              }}
+                            >
+                              Edit Booking
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-red-600 border-red-200 hover:bg-red-50"
+                              onClick={() => {
+                                setCancelReason("");
+                                setCancelReasonErr("");
+                                setCancelDialog(b);
+                              }}
+                            >
+                              Cancel Booking
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>

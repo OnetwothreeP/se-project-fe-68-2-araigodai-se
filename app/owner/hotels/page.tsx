@@ -8,9 +8,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Edit, Hotel as HotelIcon, MapPin, Phone, BedDouble, Save } from "lucide-react";
-import { apiRequest } from "@/lib/api";
+import { ArrowLeft, Edit, Hotel as HotelIcon, MapPin, Phone, BedDouble, Save } from "lucide-react";import { apiRequest } from "@/lib/api";
 
 interface Hotel {
   _id: string;
@@ -348,36 +346,6 @@ export default function OwnerHotelsManagement() {
                   {formErrors.telephone && (
                     <p className="text-xs text-red-500">{formErrors.telephone}</p>
                   )}
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    placeholder="Describe your hotel..."
-                    rows={3}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="amenities">
-                    Hotel Amenities{" "}
-                    <span className="text-xs text-gray-400">(comma-separated)</span>
-                  </Label>
-                  <Input
-                    id="amenities"
-                    value={formData.amenities.join(", ")}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        amenities: e.target.value
-                          .split(",")
-                          .map((s) => s.trim())
-                          .filter(Boolean),
-                      })
-                    }
-                    placeholder="WiFi, Pool, Gym, Parking"
-                  />
                 </div>
               </div>
 
