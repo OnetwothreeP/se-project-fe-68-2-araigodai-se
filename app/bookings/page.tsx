@@ -345,16 +345,26 @@ export default function MyBookings() {
                           : "Full refund applies"}
                       </p>
                       <p className="text-xs mt-0.5">{refundPolicy.label}</p>
-                      {cancelTarget && cancelTarget.totalPrice > 0 && (
+                      {cancelTarget && (cancelTarget.amountPaid ?? cancelTarget.totalPrice ?? 0) > 0 && (
                         <p className="text-xs mt-1">
                           Refund amount:{" "}
                           <strong>
                             {cancelTarget.paymentStatus === "unpaid"
                               ? fmtMoney(0)
-                              : fmtMoney(Math.round((cancelTarget.amountPaid ?? cancelTarget.totalPrice) * refundPolicy.rate))
+                              : fmtMoney(Math.round(
+                                  (typeof cancelTarget.amountPaid === "number" && cancelTarget.amountPaid > 0
+                                    ? cancelTarget.amountPaid
+                                    : cancelTarget.totalPrice ?? 0
+                                  ) * refundPolicy.rate
+                                ))
                             }
                           </strong>
-                          {" "}of {fmtMoney(cancelTarget.amountPaid ?? cancelTarget.totalPrice)}
+                          {" "}of{" "}
+                          {fmtMoney(
+                            typeof cancelTarget.amountPaid === "number" && cancelTarget.amountPaid > 0
+                              ? cancelTarget.amountPaid
+                              : cancelTarget.totalPrice ?? 0
+                          )}
                         </p>
                       )}
                     </div>
