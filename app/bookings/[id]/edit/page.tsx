@@ -50,6 +50,14 @@ export default function EditBooking() {
   const [isLoading, setIsLoading]           = useState(false);
   const [error, setError]                   = useState("");
   const [success, setSuccess]               = useState(false);
+  const [adjustment, setAdjustment]         = useState<{
+    action: string;
+    oldTotalPrice: number;
+    newTotalPrice: number;
+    priceDifference: number;
+    pendingPaymentAmount: number;
+    refundIssued: number;
+  } | null>(null);
 
   useEffect(() => { fetchBooking(); }, [bookingId]);
 
@@ -113,17 +121,32 @@ export default function EditBooking() {
 
   async function handleSave() {
     if (!checkInDate || !booking) return;
-    if (availOk === false) return; // blocked by availability
+    if (availOk === false) return;
     setError("");
     setIsLoading(true);
     try {
-      await apiRequest(`/bookings/${bookingId}`, {
-        method: "PUT",
-        body: JSON.stringify({
-          checkInDate: format(checkInDate, "yyyy-MM-dd"),
-          numberOfNights: Number(numberOfNights),
-        }),
-      });
+      const isPaid = ["paid", "partial_refund", "pending_additional_payment"].includes(booking.paymentStatus);
+
+      if (isPaid) {
+        // Use paid-update to recalculate price difference
+        const res = await apiRequest(`/bookings/${bookingId}/paid-update`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            checkInDate: format(checkInDate, "yyyy-MM-dd"),
+            numberOfNights: Number(numberOfNights),
+          }),
+        });
+        if (res.adjustment) setAdjustment(res.adjustment);
+      } else {
+        // Unpaid booking — simple update
+        await apiRequest(`/bookings/${bookingId}`, {
+          method: "PUT",
+          body: JSON.stringify({
+            checkInDate: format(checkInDate, "yyyy-MM-dd"),
+            numberOfNights: Number(numberOfNights),
+          }),
+        });
+      }
       setSuccess(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update booking");
@@ -161,6 +184,7 @@ export default function EditBooking() {
 
   // ── Success state ──
   if (success) {
+    const fmtMoney = (n: number) => `฿${n.toLocaleString()}`;
     return (
       <div className="min-h-screen w-full bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="max-w-2xl mx-auto px-4 py-8">
@@ -189,9 +213,49 @@ export default function EditBooking() {
                   </div>
                 </div>
               )}
-              <Button variant="outline" onClick={() => router.push("/bookings")}>
-                View My Bookings
-              </Button>
+
+              {/* Price adjustment info for paid bookings */}
+              {adjustment && adjustment.action !== "no_price_change" && (
+                <div className={`rounded-lg p-4 text-sm text-left max-w-xs mx-auto ${
+                  adjustment.action === "additional_payment_required"
+                    ? "bg-amber-50 border border-amber-200 text-amber-800"
+                    : "bg-blue-50 border border-blue-200 text-blue-800"
+                }`}>
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="size-4 shrink-0 mt-0.5" />
+                    <div className="space-y-1">
+                      {adjustment.action === "additional_payment_required" ? (
+                        <>
+                          <p className="font-semibold">Additional payment required</p>
+                          <p className="text-xs">
+                            New price: {fmtMoney(adjustment.newTotalPrice)} (was {fmtMoney(adjustment.oldTotalPrice)})
+                          </p>
+                          <p className="text-xs">Amount due: <strong>{fmtMoney(adjustment.pendingPaymentAmount)}</strong></p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="font-semibold">Refund issued</p>
+                          <p className="text-xs">
+                            New price: {fmtMoney(adjustment.newTotalPrice)} (was {fmtMoney(adjustment.oldTotalPrice)})
+                          </p>
+                          <p className="text-xs">Refund: <strong>{fmtMoney(adjustment.refundIssued)}</strong></p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-3 justify-center pt-2">
+                {adjustment?.action === "additional_payment_required" && (
+                  <Button onClick={() => router.push(`/bookings/${booking._id}/pay`)}>
+                    Pay Additional Amount
+                  </Button>
+                )}
+                <Button variant="outline" onClick={() => router.push("/bookings")}>
+                  View My Bookings
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>
